@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявки на расчет возраста</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body>
+    <div class="header-nav">
+        <a href="/" class="header-nav-link">
+            Аномальные паттерны
+        </a>
+    </div>
+
+    <div class="container">
+        <!-- Заголовки столбцов -->
+        <div class="requests-header">
+            <div class="requests-column">АНОМАЛИЯ</div>
+            <div class="requests-column">ОПИСАНИЕ НАХОДКИ</div>
+            <div class="requests-column">ЧИСЛО ВСЕХ КОЛЕЦ</div>
+            <div class="requests-column">НОМЕРА АНОМАЛЬНЫХ КОЛЕЦ</div>
+            <div class="requests-column">РАСЧИТАННЫЙ ГОД</div>
+        </div>
+
+        <!-- Таблица с заявками -->
+        <div class="requests-container">
+            {{range .requests}}
+            <div class="request-item">
+                <div class="request-info-section">
+                    <div class="request-image">
+                        <img src="{{.Image}}" alt="{{.AnomalyName}}">
+                    </div>
+                    <div class="anomaly-name">{{.AnomalyName}}</div>
+                </div>
+                <div class="request-info-section">
+                    <div class="info-value">{{.FindDescription}}</div>
+                </div>
+                <div class="request-info-section">
+                    <div class="info-value">{{.TotalRings}}</div>
+                </div>
+                <div class="request-info-section">
+                    <div class="info-value">{{.AnomalousRings}}</div>
+                </div>
+                <div class="request-info-section">
+                    <div class="info-value">{{.CalculatedYear}}г.</div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Плашка с количеством услуг -->
+        <div class="requests-count">
+            Количество выбранных услуг: {{len .requests}}
+        </div>
+    </div>
+</body>
+</html>

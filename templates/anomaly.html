@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.anomaly.Pattern}}</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body class="detail-page">
+    
+
+    <div class="detail-container">
+        <div class="detail-header">
+            <div class="detail-year">ГОД НАЧАЛА: {{.anomaly.Year}}г.</div>
+            <a href="/" class="close-button">
+                <img src="/resources/img/close-b.jpg" alt="Закрыть">
+            </a>
+        </div>
+        
+        <h1 class="detail-title">{{.anomaly.Pattern}}</h1>
+        
+        <img src="{{.anomaly.Image}}" alt="{{.anomaly.Pattern}}" class="detail-image">
+        
+        <div class="detail-info-block">
+            {{.anomaly.Description}}
+        </div>
+    </div>
+</body>
+</html>

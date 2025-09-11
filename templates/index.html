@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аномальные паттерны в дендрошкале</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body>
+    <div class="header-nav">
+        Аномальные паттерны
+    </div>
+    
+    <h1 class="main-title">аномальные паттерны в дендрошкале</h1>
+    
+    <div class="search-container">
+        <form method="GET" action="/">
+            <div class="search-box"></div>
+            <input type="text" name="query" class="search-input-field" placeholder="Поиск" value="{{.query}}">
+            <button type="submit" class="search-icon">
+                <img src="/resources/img/search-icon.png" alt="Поиск">
+            </button>
+        </form>
+        <a href="/requests" class="tree-icon">
+            <img src="/resources/img/user-icon.jpg" alt="Заявки">
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="anomalies-grid">
+            {{range .anomalies}}
+            <a href="/anomaly/{{.ID}}" class="anomaly-card">
+                <img src="{{.Image}}" alt="{{.Pattern}}">
+                <h3>{{.Pattern}}</h3>
+                <div class="year">Год начала: {{.Year}} г.</div>
+                <p><strong>Описание колец:</strong> {{.Description}}</p>
+            </a>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>
