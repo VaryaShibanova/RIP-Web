@@ -24,7 +24,7 @@ func (h *Handler) GetAnomalies(ctx *gin.Context) {
 	var anomalies []repository.Anomaly
 	var err error
 
-	searchQuery := ctx.Query("query")
+	searchQuery := ctx.Query("findanomalies")
 	if searchQuery == "" {
 		anomalies, err = h.Repository.GetAnomalies()
 		if err != nil {
@@ -61,14 +61,23 @@ func (h *Handler) GetAnomaly(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) GetRequests(ctx *gin.Context) {
-	requests, err := h.Repository.GetRequests()
+func (h *Handler) GetTree(ctx *gin.Context) { // Изменено с GetRequests на GetTree
+	idStr := ctx.Param("id") // Добавлен параметр id
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		logrus.Error(err)
+		id = 1 // Значение по умолчанию
+	}
+
+	request, requestItems, err := h.Repository.GetRequests()
 	if err != nil {
 		logrus.Error(err)
 	}
 
-	ctx.HTML(http.StatusOK, "requests.html", gin.H{
-		"time":     time.Now().Format("15:04:05"),
-		"requests": requests,
+	ctx.HTML(http.StatusOK, "tree.html", gin.H{ // Изменено на tree.html
+		"time":         time.Now().Format("15:04:05"),
+		"request":      request,
+		"requestItems": requestItems,
+		"treeID":       id, // Добавлен ID дерева
 	})
 }

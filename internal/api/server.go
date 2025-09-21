@@ -26,7 +26,7 @@ func StartServer() {
 	// Основные маршруты
 	r.GET("/", handler.GetAnomalies)
 	r.GET("/anomaly/:id", handler.GetAnomaly)
-	r.GET("/requests", handler.GetRequests)
+	r.GET("/tree/:id", handler.GetTree)
 
 	r.Run()
 	log.Println("Dendrochronology server down")

@@ -435,14 +435,6 @@ a:hover {
     text-align: center;
 }
 
-.requests-column:nth-child(2) { /* ОПИСАНИЕ НАХОДКИ */
-    text-align: center;
-}
-
-.requests-column:nth-child(3) { /* ЧИСЛО ВСЕХ КОЛЕЦ */
-    text-align: center;
-}
-
 .requests-column:nth-child(4) { /* НОМЕРА АНОМАЛЬНЫХ КОЛЕЦ */
     text-align: center;
 }
@@ -550,4 +542,155 @@ a:hover {
     text-align: left;
 }
 
+/* ... (предыдущие стили остаются без изменений) ... */
 
+/* Стили для общей информации о заявке - ОБНОВЛЕНО */
+.request-general-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+    margin-bottom: 40px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.general-info-card {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 20px;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.info-label {
+    color: #9198AA;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: right;
+    padding-right: 20px;
+    width: 100%;
+}
+
+.info-value-input {
+    color: white;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.4;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/*
+
+/* Обновленные стили для карточек заявок */
+/*
+.requests-container {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.request-item {
+    display: grid;
+    /*grid-template-columns: 1fr 200px 150px 60px;  Добавлено место для иконки удаления 
+    gap: 20px;
+    margin-bottom: 15px;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.request-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(5px);
+}
+
+.request-info-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+}
+*/
+
+.anomaly-section {
+    justify-content: flex-start;
+    gap: 15px;
+}
+
+.rings-section, .year-section {
+    flex-direction: column;
+    gap: 5px;
+}
+
+.request-image {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.request-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomaly-name {
+    color: white;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.3;
+    text-align: left;
+    flex: 1;
+}
+
+.rings-value {
+     color: #5f6c88;
+    font-size: 18px;
+    font-weight: 600;
+    background: rgba(78, 205, 196, 0.1);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    min-width: 80px;
+    text-align: center;
+}
+
+.year-value {
+    color: #5f6c88;
+    font-size: 18px;
+    font-weight: 600;
+    background: rgba(78, 205, 196, 0.1);
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    min-width: 80px;
+    text-align: center;
+}

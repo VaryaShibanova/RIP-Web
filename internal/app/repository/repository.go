@@ -21,14 +21,22 @@ type Anomaly struct {
 	Image       string
 }
 
+// Request - общая информация о заявке
 type Request struct {
 	ID              int
-	AnomalyName     string
 	FindDescription string
 	TotalRings      int
-	AnomalousRings  string
-	CalculatedYear  int
-	Image           string
+	FinalYear       int
+}
+
+// RequestItem - отдельная аномалия в заявке
+type RequestItem struct {
+	ID             int
+	RequestID      int
+	AnomalyName    string
+	AnomalousRings string
+	CalculatedYear int
+	Image          string
 }
 
 func (r *Repository) GetAnomalies() ([]Anomaly, error) {
@@ -122,31 +130,38 @@ func (r *Repository) GetAnomaliesByPattern(pattern string) ([]Anomaly, error) {
 	return result, nil
 }
 
-func (r *Repository) GetRequests() ([]Request, error) {
-	requests := []Request{
+func (r *Repository) GetRequests() (Request, []RequestItem, error) {
+	// Общая информация о заявке
+	request := Request{
+		ID:              1,
+		FindDescription: "Исследование аномальных колец древесных срезов для датировки исторических событий",
+		TotalRings:      235,
+		FinalYear:       1600,
+	}
+
+	// Отдельные аномалии в заявке
+	requestItems := []RequestItem{
 		{
-			ID:              1,
-			AnomalyName:     "Извержение вулкана Уайнапутина",
-			FindDescription: "Обнаружено узкое темное кольцо 1601 года",
-			TotalRings:      320,
-			AnomalousRings:  "1601",
-			CalculatedYear:  1600,
-			Image:           "http://127.0.0.1:9000/images/img/card1.jpg",
+			ID:             1,
+			RequestID:      1,
+			AnomalyName:    "Извержение вулкана Уайнапутина",
+			AnomalousRings: "3",
+			CalculatedYear: 1600,
+			Image:          "http://127.0.0.1:9000/images/img/card1.jpg",
 		},
 		{
-			ID:              2,
-			AnomalyName:     "Извержение Каракатау",
-			FindDescription: "Обнаружены фрагментированные кольца 1883-1884 годов",
-			TotalRings:      150,
-			AnomalousRings:  "1883, 1884",
-			CalculatedYear:  1883,
-			Image:           "http://127.0.0.1:9000/images/img/card3.jpg",
+			ID:             2,
+			RequestID:      1,
+			AnomalyName:    "Извержение Каракатау",
+			AnomalousRings: "15, 16",
+			CalculatedYear: 1883,
+			Image:          "http://127.0.0.1:9000/images/img/card3.jpg",
 		},
 	}
 
-	if len(requests) == 0 {
-		return nil, fmt.Errorf("нет данных о заявках")
+	if len(requestItems) == 0 {
+		return Request{}, nil, fmt.Errorf("нет данных о заявках")
 	}
 
-	return requests, nil
+	return request, requestItems, nil
 }
