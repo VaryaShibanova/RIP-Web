@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WK</title>
+    <link rel="stylesheet" href="/styles/chats_style.css">
+</head>
+<body>
+    <header class="site-header">
+        <a href="/chats" class="home-link">
+           <img src="/img/logo.png" alt="Logo">
+            <span class="logo-text">WK</span>
+        </a>
+        <div class="cart-icon">
+            {{ if ne .cart_count 0 }}
+            <a href="/message/{{ .draft_id }}">
+                {{ end }}
+               <img src="/img/carticon.png" alt="Cart">
+                {{ if ne .cart_count 0 }}
+                <span class="cart-count">{{ .cart_count }}</span>
+            </a>
+            {{ end }}
+        </div>
+    </header>
+    <div class="container">
+        <div class="search-bar">
+            <form action="/chats" method="GET">
+                <input type="text" name="search" placeholder="Поиск" value="{{ .search }}">
+            </form>
+        </div>
+        <div class="content">
+            {{ range .data }}
+            <a href="/chats/{{ .ID }}" class="contact-card">
+                <div class="avatar">
+                    <img src="/img/defaultIcon.png" alt="Avatar">
+                </div>
+                <div class="contact-info">
+                    <h3>{{ .Name }}</h3>
+                    <p>{{ .Info }}</p>
+                </div>
+                <form action="/delete-chat" method="POST" class="add-chat-form">
+                    <input type="hidden" name="chat_id" value="{{ .ID }}">
+                    <button type="submit" class="add-btn">
+                       <img src="/img/deleteicon.png" alt="Delete">
+                    </button>
+                </form>
+            </a>
+            {{ end }}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль</title>
+    <link rel="stylesheet" href="/styles/chat_style.css">
+</head>
+<body>
+<header class="site-header">
+    <a href="/chats" class="home-link">
+       <img src="/img/carticon.png" alt="Logo">
+        <span class="logo-text">WK</span>
+    </a>
+</header>
+<div class="profile-container">
+    <div class="profile-image">
+        <img src={{ .Img }} alt={{ .Name }}>
+    </div>
+    <div class="profile-details">
+        <h2>{{ .Name }}</h2>
+        <p><b>Имя пользователя:</b> {{ .Nickname }}</p>
+        <p><b>Друзья:</b> {{ .Friends }}</p>
+        <p><b>Подписчики:</b> {{ .Subscribers }}</p>
+        <p><b>Описание:</b> {{ .Info }}</p>
+    </div>
+</div>
+</body>
+</html>
