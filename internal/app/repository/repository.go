@@ -10,12 +10,11 @@ type Repository struct {
 }
 
 func New(dsn string) (*Repository, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}) // подключаемся к БД
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Возвращаем объект Repository с подключенной базой данных
 	return &Repository{
 		db: db,
 	}, nil

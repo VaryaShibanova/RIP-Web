@@ -4,21 +4,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"RIP-WEB/internal/app/ds"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
-func (h *Handler) GetAllChats(ctx *gin.Context) {
-	var chats []ds.Chat
+func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
+	var anomalies []interface{}
 	var err error
 
-	search := ctx.Query("search")
+	search := ctx.Query("findanomalies")
 	if search == "" {
-		chats, err = h.Repository.GetAllChats()
+		anomalies, err = h.Repository.GetAllAnomalies()
 	} else {
-		chats, err = h.Repository.SearchChatsByName(search)
+		anomalies, err = h.Repository.SearchAnomaliesByName(search)
 	}
 
 	if err != nil {
@@ -29,14 +27,14 @@ func (h *Handler) GetAllChats(ctx *gin.Context) {
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "chats.page.tmpl", gin.H{
-		"data":       chats,
+	ctx.HTML(http.StatusOK, "index.tmpl", gin.H{
+		"anomalies":  anomalies,
 		"cart_count": h.Repository.GetCartCount(),
-		"search":     search,
+		"query":      search,
 	})
 }
 
-func (h *Handler) GetChatById(ctx *gin.Context) {
+func (h *Handler) GetAnomalyById(ctx *gin.Context) {
 	strId := ctx.Param("id")
 	id, err := strconv.Atoi(strId)
 	if err != nil {
@@ -47,7 +45,7 @@ func (h *Handler) GetChatById(ctx *gin.Context) {
 		return
 	}
 
-	chat, err := h.Repository.GetChatByID(id)
+	anomaly, err := h.Repository.GetAnomalyByID(id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -56,5 +54,5 @@ func (h *Handler) GetChatById(ctx *gin.Context) {
 		return
 	}
 
-	ctx.HTML(http.StatusOK, "chat.page.tmpl", chat)
+	ctx.HTML(http.StatusOK, "anomaly.tmpl", anomaly)
 }

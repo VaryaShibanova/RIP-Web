@@ -18,9 +18,9 @@ func main() {
 
 	// Migrate the schema
 	err = db.AutoMigrate(
-		&ds.Chat{},
-		&ds.Message{},
-		&ds.MessageChat{},
+		&ds.Anomaly{},
+		&ds.Tree{},
+		&ds.TreeItem{},
 		&ds.Users{},
 	)
 	if err != nil {

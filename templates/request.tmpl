@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заявка на исследование</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body>
+    <div class="header-nav">
+        <a href="/anomalies" class="header-nav-link">Аномальные паттерны</a>
+    </div>
+
+    <div class="container">
+        <h1 class="main-title">заявка на исследование</h1>
+
+        <div class="request-general-info">
+            <div class="general-info-card">
+                <div class="info-header">
+                    <span class="info-label">СТАТУС</span>
+                </div>
+                <div class="info-value-input">
+                    {{.request.Status}}
+                </div>
+            </div>
+            
+            <div class="general-info-card">
+                <div class="info-header">
+                    <span class="info-label">ДАТА СОЗДАНИЯ</span>
+                </div>
+                <div class="info-value-input">
+                    {{.request.DateCreate.Format "02.01.2006"}}
+                </div>
+            </div>
+        </div>
+
+        <div class="requests-header">
+            <div class="requests-column">АНомалия</div>
+            <div class="requests-column">НОМЕРА АНОМАЛЬНЫХ КОЛЕЦ</div>
+            <div class="requests-column">РАСЧИТАННЫЙ ГОД</div>
+            <div class="requests-column">ДЕЙСТВИЯ</div>
+        </div>
+
+        <div class="requests-container">
+            {{range .requestItems}}
+            <div class="request-item">
+                <div class="request-info-section anomaly-section">
+                    <div class="request-image">
+                        <img src="{{.Anomaly.Image}}" alt="{{.Anomaly.Name}}">
+                    </div>
+                    <div class="anomaly-name">{{.Anomaly.Name}}</div>
+                </div>
+                <div class="request-info-section rings-section">
+                    <div class="info-value rings-value">{{.AnomalousRings}}</div>
+                </div>
+                <div class="request-info-section year-section">
+                    <div class="info-value year-value">{{.CalculatedYear}}г.</div>
+                </div>
+                <div class="request-info-section actions-section">
+                    <form method="POST" action="/request/delete">
+                        <input type="hidden" name="request_id" value="{{.RequestID}}">
+                        <button type="submit" class="delete-btn">Удалить</button>
+                    </form>
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <div class="requests-count">
+            Количество аномалий в заявке: {{len .requestItems}}
+        </div>
+    </div>
+</body>
+</html>

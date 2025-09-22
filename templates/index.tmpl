@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аномальные паттерны в дендрошкале</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body>
+    <div class="header-nav">
+        Аномальные паттерны
+    </div>
+    
+    <h1 class="main-title">аномальные паттерны в дендрошкале</h1>
+    
+    <div class="search-container">
+        <form method="GET" action="/anomalies">
+            <div class="search-box"></div>
+            <input type="text" name="findanomalies" class="search-input-field" placeholder="Поиск" value="{{.query}}">
+            <button type="submit" class="search-icon">
+                <img src="http://127.0.0.1:9000/images/img/search-icon.png" alt="Поиск">
+            </button>
+        </form>
+        {{if gt .cart_count 0}}
+        <a href="/tree/1" class="tree-icon">
+            <img src="http://127.0.0.1:9000/images/img/user-icon.jpg" alt="Дерево">
+            <span class="cart-count">{{.cart_count}}</span>
+        </a>
+        {{else}}
+        <div class="tree-icon disabled">
+            <img src="http://127.0.0.1:9000/images/img/user-icon.jpg" alt="Дерево">
+        </div>
+        {{end}}
+    </div>
+
+    <div class="container">
+        <div class="anomalies-grid">
+            {{range .anomalies}}
+            <a href="/anomaly/{{.ID}}" class="anomaly-card">
+                <img src="{{.Image}}" alt="{{.Name}}">
+                <h3>{{.Name}}</h3>
+                <div class="year">Год начала: {{.Year}} г.</div>
+                <p><strong>Описание:</strong> {{.Description}}</p>
+            </a>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>
