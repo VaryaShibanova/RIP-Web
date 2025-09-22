@@ -1,7 +1,5 @@
 # устанавливаем версию в соотвествии с необходимой нам
 # подробнее на https://docs.docker.com/compose/compose-file/compose-versioning/
-version: '3.7'
-
 # настройки и конфигурации, общие для всех контейнеров
 x-minio-common: &minio-common
   image: quay.io/minio/minio:RELEASE.2022-10-15T19-57-03Z # устанавливаем image
@@ -74,6 +72,24 @@ services:
       - minio2
       - minio3
       - minio4
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+
 
 ## По умолчанию в этой конфигурации используется локальный драйвер docker по умолчанию,
 ## Для пользовательских томов замените на конфигурацию драйвера тома.
@@ -86,3 +102,4 @@ volumes:
   data3-2:
   data4-1:
   data4-2:
+  postgres_data:
