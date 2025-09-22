@@ -18,7 +18,7 @@ func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
 	if search == "" {
 		anomalies, err = h.Repository.GetAllAnomalies()
 	} else {
-		anomalies, err = h.Repository.SearchAnomaliesByName(search)
+		anomalies, err = h.Repository.SearchAnomalies(search) // Изменено на SearchAnomalies
 	}
 
 	if err != nil {

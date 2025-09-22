@@ -4,6 +4,7 @@ import (
 	"RIP-WEB/internal/app/ds"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -30,9 +31,23 @@ func (r *Repository) GetAnomalyByID(id int) (*ds.Anomaly, error) {
 	return &anomaly, nil
 }
 
-func (r *Repository) SearchAnomaliesByName(name string) ([]ds.Anomaly, error) {
+func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 	var anomalies []ds.Anomaly
-	err := r.db.Where("name ILIKE ? AND is_delete = false", "%"+name+"%").Find(&anomalies).Error
+
+	// Пытаемся преобразовать запрос в число (для поиска по году)
+	year := 0
+	if yearValue, err := strconv.Atoi(query); err == nil {
+		year = yearValue
+	}
+
+	// Поиск по названию, описанию ИЛИ году
+	err := r.db.Where(
+		"(name ILIKE ? OR description ILIKE ? OR year = ?) AND is_delete = false",
+		"%"+query+"%",
+		"%"+query+"%",
+		year,
+	).Find(&anomalies).Error
+
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Аномальные паттерны в дендрошкале</title>
-    <link rel="stylesheet" href="/resources/style.css">
+    <link rel="stylesheet" href="/resources/style.css?v=3">
 </head>
 <body>
     <div class="header-nav">
@@ -16,7 +16,7 @@
     <div class="search-container">
         <form method="GET" action="/anomalies">
             <div class="search-box"></div>
-            <input type="text" name="findanomalies" class="search-input-field" placeholder="Поиск" value="{{.query}}">
+            <input type="text" name="findanomalies" class="search-input-field" placeholder="Поиск" value="{{.query}}"> <!-- Исправлено на findanomylies -->
             <button type="submit" class="search-icon">
                 <img src="http://127.0.0.1:9000/images/img/search-icon.png" alt="Поиск">
             </button>
@@ -39,19 +39,20 @@
             <div class="anomaly-card">
                 <a href="/anomaly/{{.ID}}" class="anomaly-link">
                     <img src="{{.Image}}" alt="{{.Name}}">
-                    <h3>{{.Name}}</h3>
+                    <h3>
+                        <span>{{.Name}}</span>
+                        <form method="POST" action="/tree/add" class="add-to-tree-form">
+                            <input type="hidden" name="anomaly_id" value="{{.ID}}">
+                            <input type="hidden" name="anomalous_rings" value="{{.Year}}-{{add .Year 1}}">
+                            <input type="hidden" name="calculated_year" value="{{.Year}}">
+                            <button type="submit" class="add-to-tree-btn" title="Добавить в дерево">
+                                <img src="http://127.0.0.1:9000/images/img/add-b.png" alt="Добавить">
+                            </button>
+                        </form>
+                    </h3>
                     <div class="year">Год начала: {{.Year}} г.</div>
                     <p><strong>Описание:</strong> {{.Description}}</p>
                 </a>
-                
-                <form method="POST" action="/tree/add" class="add-to-tree-form">
-                    <input type="hidden" name="anomaly_id" value="{{.ID}}">
-                    <input type="hidden" name="anomalous_rings" value="{{.Year}}-{{add .Year 1}}">
-                    <input type="hidden" name="calculated_year" value="{{.Year}}">
-                    <button type="submit" class="add-to-tree-btn" title="Добавить в дерево">
-                        +
-                    </button>
-                </form>
             </div>
             {{end}}
         </div>

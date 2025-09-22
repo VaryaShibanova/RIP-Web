@@ -23,6 +23,7 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 	router.GET("/tree/:id", h.GetTree)
 	router.POST("/tree/add", h.AddToTree)
 	router.POST("/tree/delete", h.DeleteTree)
+	// Добавьте другие маршруты по необходимости
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
