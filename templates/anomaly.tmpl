@@ -22,19 +22,6 @@
         <div class="detail-info-block">
             {{.Description}}
         </div>
-
-        <form method="POST" action="/tree/add" class="add-to-tree-form">
-            <input type="hidden" name="anomaly_id" value="{{.ID}}">
-            <div class="form-group">
-                <label for="anomalous_rings">Номера аномальных колец:</label>
-                <input type="text" name="anomalous_rings" id="anomalous_rings" required>
-            </div>
-            <div class="form-group">
-                <label for="calculated_year">Рассчитанный год:</label>
-                <input type="number" name="calculated_year" id="calculated_year" required>
-            </div>
-            <button type="submit" class="add-to-tree-btn">Добавить в дерево</button>
-        </form>
     </div>
 </body>
 </html>

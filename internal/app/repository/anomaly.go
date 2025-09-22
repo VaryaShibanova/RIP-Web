@@ -44,12 +44,12 @@ func (r *Repository) GetCartCount() int64 {
 	var count int64
 	creatorID := 1
 
-	err := r.db.Model(&ds.Request{}).Where("creator_id = ? AND status = ?", creatorID, "черновик").Select("id").First(&requestID).Error
+	err := r.db.Model(&ds.Tree{}).Where("creator_id = ? AND status = ?", creatorID, "черновик").Select("id").First(&requestID).Error
 	if err != nil {
 		return 0
 	}
 
-	err = r.db.Model(&ds.RequestItem{}).Where("request_id = ?", requestID).Count(&count).Error
+	err = r.db.Model(&ds.TreeItem{}).Where("request_id = ?", requestID).Count(&count).Error
 	if err != nil {
 		logrus.Println("Error counting records in request_items:", err)
 	}

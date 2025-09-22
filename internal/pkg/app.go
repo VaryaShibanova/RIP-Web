@@ -27,6 +27,13 @@ func NewApp(c *config.Config, r *gin.Engine, h *handler.Handler) *Application {
 func (a *Application) RunApp() {
 	logrus.Info("Server start up")
 
+	// Добавляем функции для шаблонов
+	a.Router.SetFuncMap(map[string]interface{}{
+		"add": func(a, b int) int {
+			return a + b
+		},
+	})
+
 	a.Handler.RegisterHandler(a.Router)
 	a.Handler.RegisterStatic(a.Router)
 

@@ -36,12 +36,23 @@
     <div class="container">
         <div class="anomalies-grid">
             {{range .anomalies}}
-            <a href="/anomaly/{{.ID}}" class="anomaly-card">
-                <img src="{{.Image}}" alt="{{.Name}}">
-                <h3>{{.Name}}</h3>
-                <div class="year">Год начала: {{.Year}} г.</div>
-                <p><strong>Описание:</strong> {{.Description}}</p>
-            </a>
+            <div class="anomaly-card">
+                <a href="/anomaly/{{.ID}}" class="anomaly-link">
+                    <img src="{{.Image}}" alt="{{.Name}}">
+                    <h3>{{.Name}}</h3>
+                    <div class="year">Год начала: {{.Year}} г.</div>
+                    <p><strong>Описание:</strong> {{.Description}}</p>
+                </a>
+                
+                <form method="POST" action="/tree/add" class="add-to-tree-form">
+                    <input type="hidden" name="anomaly_id" value="{{.ID}}">
+                    <input type="hidden" name="anomalous_rings" value="{{.Year}}-{{add .Year 1}}">
+                    <input type="hidden" name="calculated_year" value="{{.Year}}">
+                    <button type="submit" class="add-to-tree-btn" title="Добавить в дерево">
+                        +
+                    </button>
+                </form>
+            </div>
             {{end}}
         </div>
     </div>
