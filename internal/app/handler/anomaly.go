@@ -4,12 +4,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"RIP-WEB/internal/app/ds"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
 func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
-	var anomalies []interface{}
+	var anomalies []ds.Anomaly
 	var err error
 
 	search := ctx.Query("findanomalies")
