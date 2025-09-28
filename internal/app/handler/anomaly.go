@@ -18,7 +18,7 @@ func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
 	if search == "" {
 		anomalies, err = h.Repository.GetAllAnomalies()
 	} else {
-		anomalies, err = h.Repository.SearchAnomalies(search) // Изменено на SearchAnomalies
+		anomalies, err = h.Repository.SearchAnomalies(search)
 	}
 
 	if err != nil {
@@ -29,10 +29,19 @@ func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
 		return
 	}
 
+	// Получаем количество услуг в корзине и ID текущего дерева
+	cartCount := h.Repository.GetCartCount()
+	currentTree, _ := h.Repository.GetDraftTree(uint(1)) // creatorID = 1
+	currentTreeID := 0
+	if currentTree != nil {
+		currentTreeID = int(currentTree.ID)
+	}
+
 	ctx.HTML(http.StatusOK, "index.tmpl", gin.H{
-		"anomalies":  anomalies,
-		"cart_count": h.Repository.GetCartCount(),
-		"query":      search,
+		"anomalies":       anomalies,
+		"cart_count":      cartCount,
+		"current_tree_id": currentTreeID,
+		"query":           search,
 	})
 }
 

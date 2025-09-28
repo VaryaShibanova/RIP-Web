@@ -2,6 +2,7 @@ package repository
 
 import (
 	"RIP-WEB/internal/app/ds"
+	"errors"
 	"fmt"
 	"time"
 
@@ -33,6 +34,21 @@ func (r *Repository) GetOrCreateDraftTree(userID uint) (*ds.Tree, error) {
 }
 
 func (r *Repository) AddAnomalyToTree(treeID, anomalyID uint, anomalousRings string, calculatedYear int) error {
+	// Проверяем, не добавлена ли уже эта аномалия в дерево
+	var existingItem ds.TreeItem
+	err := r.db.Where("tree_id = ? AND anomaly_id = ?", treeID, anomalyID).First(&existingItem).Error
+
+	if err == nil {
+		// Аномалия уже есть в дереве - обновляем существующую запись
+		return r.db.Model(&existingItem).Updates(map[string]interface{}{
+			"anomalous_rings": anomalousRings,
+			"calculated_year": calculatedYear,
+		}).Error
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// Создаем новую запись
 	treeItem := ds.TreeItem{
 		TreeID:         treeID,
 		AnomalyID:      anomalyID,
@@ -60,7 +76,7 @@ func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, err
 }
 
 func (r *Repository) DeleteTree(treeID uint) error {
-	// Используем RAW SQL для обновления статуса
+	// Используем RAW SQL для обновления статуса на "удалён"
 	result := r.db.Exec("UPDATE trees SET status = 'удалён', date_update = NOW() WHERE id = ?", treeID)
 	if result.Error != nil {
 		return result.Error
@@ -75,6 +91,18 @@ func (r *Repository) GetTreeByID(treeID uint) (*ds.Tree, error) {
 	var tree ds.Tree
 	err := r.db.First(&tree, treeID).Error
 	if err != nil {
+		return nil, err
+	}
+	return &tree, nil
+}
+
+func (r *Repository) GetDraftTree(userID uint) (*ds.Tree, error) {
+	var tree ds.Tree
+	err := r.db.Where("creator_id = ? AND status = ?", userID, "черновик").First(&tree).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &tree, nil

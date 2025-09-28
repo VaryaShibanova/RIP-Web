@@ -55,18 +55,22 @@ func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 }
 
 func (r *Repository) GetCartCount() int64 {
-	var requestID uint
+	var tree ds.Tree
 	var count int64
-	creatorID := 1
 
-	err := r.db.Model(&ds.Tree{}).Where("creator_id = ? AND status = ?", creatorID, "черновик").Select("id").First(&requestID).Error
+	// Находим черновик текущего пользователя
+	creatorID := uint(1)
+	err := r.db.Where("creator_id = ? AND status = ?", creatorID, "черновик").First(&tree).Error
 	if err != nil {
+		// Если черновика нет, возвращаем 0
 		return 0
 	}
 
-	err = r.db.Model(&ds.TreeItem{}).Where("request_id = ?", requestID).Count(&count).Error
+	// Считаем количество элементов в дереве
+	err = r.db.Model(&ds.TreeItem{}).Where("tree_id = ?", tree.ID).Count(&count).Error
 	if err != nil {
-		logrus.Println("Error counting records in request_items:", err)
+		logrus.Error("Error counting tree items:", err)
+		return 0
 	}
 
 	return count

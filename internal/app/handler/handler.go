@@ -2,6 +2,7 @@ package handler
 
 import (
 	"RIP-WEB/internal/app/repository"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -37,4 +38,60 @@ func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, err error)
 		"status":      "error",
 		"description": err.Error(),
 	})
+}
+
+func (h *Handler) DeleteTree(ctx *gin.Context) {
+	strId := ctx.PostForm("tree_id")
+	id, err := strconv.Atoi(strId)
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "Неверный ID дерева"})
+		return
+	}
+
+	err = h.Repository.DeleteTree(uint(id))
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.Redirect(302, "/anomalies")
+}
+
+func (h *Handler) AddToTree(ctx *gin.Context) {
+	creatorID := uint(1)
+	anomalyID, err := strconv.Atoi(ctx.PostForm("anomaly_id"))
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "Неверный ID аномалии"})
+		return
+	}
+
+	// Получаем данные аномалии из БД
+	anomaly, err := h.Repository.GetAnomalyByID(anomalyID)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Ошибка получения данных аномалии"})
+		return
+	}
+	if anomaly == nil {
+		ctx.JSON(404, gin.H{"error": "Аномалия не найдена"})
+		return
+	}
+
+	// Используем год из БД как начальное значение
+	calculatedYear := anomaly.Year
+	// Пустая строка для колец - заполнится позже
+	anomalousRings := ""
+
+	tree, err := h.Repository.GetOrCreateDraftTree(creatorID)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.Repository.AddAnomalyToTree(tree.ID, uint(anomalyID), anomalousRings, calculatedYear)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.Redirect(302, "/anomalies")
 }
