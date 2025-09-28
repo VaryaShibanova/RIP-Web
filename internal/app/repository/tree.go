@@ -61,7 +61,7 @@ func (r *Repository) AddAnomalyToTree(treeID, anomalyID uint, anomalousRings str
 
 func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, error) {
 	var tree ds.Tree
-	err := r.db.Preload("TreeItems").Preload("TreeItems.Anomaly").First(&tree, treeID).Error
+	err := r.db.First(&tree, treeID).Error
 	if err != nil {
 		return nil, nil, err
 	}

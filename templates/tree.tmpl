@@ -20,7 +20,7 @@
                     <span class="info-label">ОПИСАНИЕ НАХОДКИ</span>
                 </div>
                 <div class="info-value-input">
-                    {{if .tree}}{{.tree.Description}}{{else}}Не указано{{end}}
+                    {{if .tree.Description}}{{.tree.Description}}{{else}}Не указано{{end}}
                 </div>
             </div>
             
@@ -29,7 +29,7 @@
                     <span class="info-label">ЧИСЛО ВСЕХ КОЛЕЦ</span>
                 </div>
                 <div class="info-value-input">
-                    {{if .tree}}{{.tree.TotalRings}}{{else}}0{{end}}
+                    {{if .tree.TotalRings}}{{.tree.TotalRings}}{{else}}0{{end}}
                 </div>
             </div>
             
@@ -38,12 +38,12 @@
                     <span class="info-label">ИТОГОВЫЙ ГОД</span>
                 </div>
                 <div class="info-value-input">
-                    {{if .tree}}{{.tree.FinalYear}}{{else}}0{{end}} г.
+                    {{if .tree.FinalYear}}{{.tree.FinalYear}}{{else}}0{{end}} г.
                 </div>
             </div>
         </div>
 
-        <!-- Заголовки столбцов - БЕЗ INLINE СТИЛЕЙ -->
+        <!-- Заголовки столбцов -->
         <div class="requests-header">
             <div class="requests-column">АНОМАЛИЯ</div>
             <div class="requests-column">НОМЕРА АНОМАЛЬНЫХ КОЛЕЦ</div>
@@ -64,13 +64,13 @@
                         </div>
                     </div>
                     <div class="request-info-section">
-                        <div class="info-value rings-value">
-                            {{.AnomalousRings}}
+                        <div class="editable-field">
+                            {{if .AnomalousRings}}{{.AnomalousRings}}{{else}}0{{end}}
                         </div>
                     </div>
                     <div class="request-info-section">
-                        <div class="info-value year-value">
-                            {{.CalculatedYear}} г.
+                        <div class="editable-field">
+                            {{if .CalculatedYear}}{{.CalculatedYear}}{{else}}0{{end}} г.
                         </div>
                     </div>
                 </div>
