@@ -7,7 +7,7 @@ import (
 
 type Tree struct {
 	ID          uint         `gorm:"primaryKey"`
-	Status      string       `gorm:"type:varchar(20);not null;default:'черновик'"`
+	Status      string       `gorm:"type:varchar(20);not null;default:'черновик';check:status IN ('черновик', 'удалён', 'сформирован', 'завершён', 'отклонён')"`
 	Description string       `gorm:"type:text"`
 	TotalRings  int          `gorm:"not null;default:0"`
 	FinalYear   int          `gorm:"default:0"`

@@ -19,12 +19,11 @@ func NewHandler(r *repository.Repository) *Handler {
 }
 
 func (h *Handler) RegisterHandler(router *gin.Engine) {
-	router.GET("/anomalies", h.GetAllAnomalies)
-	router.GET("/anomaly/:id", h.GetAnomalyById)
-	router.GET("/tree/:id", h.GetTree)
-	router.POST("/tree/add", h.AddToTree)
-	router.POST("/tree/delete", h.DeleteTree)
-	// Добавьте другие маршруты по необходимости
+	router.GET("/anomalies", h.GetAllAnomalies)  // GET - получение услуг (ORM)
+	router.GET("/anomaly/:id", h.GetAnomalyById) // GET - просмотр услуги (ORM)
+	router.GET("/tree/:id", h.GetTree)           // GET - просмотр заявки (ORM)
+	router.POST("/tree/add", h.AddToTree)        // POST - добавление в заявку (ORM)
+	router.POST("/tree/delete", h.DeleteTree)    // POST - удаление заявки (SQL UPDATE)
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
