@@ -75,8 +75,7 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 		return
 	}
 
-	// Используем год из БД как начальное значение
-	calculatedYear := anomaly.Year
+	calculatedYear := 0
 	// Пустая строка для колец - заполнится позже
 	anomalousRings := ""
 
