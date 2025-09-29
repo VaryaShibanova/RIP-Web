@@ -12,7 +12,7 @@ import (
 
 func (r *Repository) GetAllAnomalies() ([]ds.Anomaly, error) {
 	var anomalies []ds.Anomaly
-	err := r.db.Where("is_delete = false").Find(&anomalies).Error
+	err := r.db.Where("is_delete = false").Order("id ASC").Find(&anomalies).Error
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 		"%"+query+"%",
 		"%"+query+"%",
 		year,
-	).Find(&anomalies).Error
+	).Order("id ASC").Find(&anomalies).Error
 
 	if err != nil {
 		return nil, err

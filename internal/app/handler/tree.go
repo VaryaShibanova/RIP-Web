@@ -13,33 +13,33 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 	treeID, err := strconv.Atoi(strId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Неверный ID дерева",
+			"status":      "error",
+			"description": "Неверный ID дерева",
 		})
 		logrus.Error(err)
 		return
 	}
 
-	tree, treeItems, err := h.Repository.GetTreeWithItems(uint(treeID))
+	tree, treeItems, err := h.Repository.GetTreeWithItems(uint(treeID)) //ORM вызов
 	if err != nil {
-		// Если дерево не найдено, возвращаем 404
-		ctx.HTML(http.StatusNotFound, "tree.tmpl", gin.H{
-			"tree":      nil,
-			"treeItems": nil,
-			"treeID":    treeID,
+		// Если дерево не найдено, возвращаем JSON ошибку
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"status":      "error",
+			"description": "Заявка не найдена",
 		})
 		return
 	}
 
 	// Проверяем, что дерево не удалено
 	if tree.Status == "удалён" {
-		ctx.HTML(http.StatusNotFound, "tree.tmpl", gin.H{
-			"tree":      nil,
-			"treeItems": nil,
-			"treeID":    treeID,
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"status":      "error",
+			"description": "you can't watch deleted tree",
 		})
 		return
 	}
 
+	// Если заявка активна - показываем HTML страницу
 	ctx.HTML(http.StatusOK, "tree.tmpl", gin.H{
 		"tree":       tree,
 		"treeItems":  treeItems,

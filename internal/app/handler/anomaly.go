@@ -10,15 +10,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
+func (h *Handler) GetAllAnomalies(ctx *gin.Context) { //все аномалии
 	var anomalies []ds.Anomaly
 	var err error
 
 	search := ctx.Query("findanomalies")
 	if search == "" {
-		anomalies, err = h.Repository.GetAllAnomalies()
+		anomalies, err = h.Repository.GetAllAnomalies() // ORM вызов
 	} else {
-		anomalies, err = h.Repository.SearchAnomalies(search)
+		anomalies, err = h.Repository.SearchAnomalies(search) // ORM вызов
 	}
 
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *Handler) GetAllAnomalies(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) GetAnomalyById(ctx *gin.Context) {
+func (h *Handler) GetAnomalyById(ctx *gin.Context) { //конкретная аномалия
 	strId := ctx.Param("id")
 	id, err := strconv.Atoi(strId)
 	if err != nil {
@@ -56,7 +56,7 @@ func (h *Handler) GetAnomalyById(ctx *gin.Context) {
 		return
 	}
 
-	anomaly, err := h.Repository.GetAnomalyByID(id)
+	anomaly, err := h.Repository.GetAnomalyByID(id) // ORM вызов
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
