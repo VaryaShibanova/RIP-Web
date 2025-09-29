@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аномальные паттерны в дендрошкале</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body>
+    <div class="header-nav">
+        Аномальные паттерны
+    </div>
+    
+    <h1 class="main-title">аномальные паттерны в дендрошкале</h1>
+    
+    <div class="search-container">
+        <form method="GET" action="/anomalies">
+            <div class="search-box"></div>
+            <input type="text" name="findanomalies" class="search-input-field" placeholder="Поиск" value="{{.query}}">
+            <button type="submit" class="search-icon">
+                <img src="http://127.0.0.1:9000/images/img/search-icon.png" alt="Поиск">
+            </button>
+        </form>
+        
+        <!-- Проверяем наличие черновика -->
+        {{$cartCount := .cart_count}}
+        {{if gt $cartCount 0}}
+        <a href="/tree/{{.current_tree_id}}" class="tree-icon">
+            <img src="http://127.0.0.1:9000/images/img/user-icon.jpg" alt="Дерево">
+            <span class="cart-count">{{$cartCount}}</span>
+        </a>
+        {{else}}
+        <div class="tree-icon disabled" title="Нет услуг в заявке">
+            <img src="http://127.0.0.1:9000/images/img/user-icon.jpg" alt="Дерево">
+        </div>
+        {{end}}
+    </div>
+
+    <div class="container">
+        <div class="anomalies-grid">
+            {{range .anomalies}}
+            <div class="anomaly-card">
+                <div class="anomaly-link">
+                    <a href="/anomaly/{{.ID}}">
+                        <img src="{{.Image}}" alt="{{.Name}}">
+                    </a>
+                    <h3>
+                        <span>{{.Name}}</span>
+                        <form method="POST" action="/tree/add" class="add-to-tree-form">
+                            <input type="hidden" name="anomaly_id" value="{{.ID}}">
+                            <button type="submit" class="add-to-tree-btn" title="Добавить в дерево">
+                                <img src="http://127.0.0.1:9000/images/img/add-b.png" alt="Добавить">
+                            </button>
+                        </form>
+                    </h3>
+                    <div class="year">Год начала: {{.Year}} г.</div>
+                    <p>{{.Description}}</p>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>
