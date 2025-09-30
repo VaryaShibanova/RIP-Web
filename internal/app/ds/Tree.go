@@ -19,5 +19,4 @@ type Tree struct {
 
 	Creator   Users `gorm:"foreignKey:CreatorID"`
 	Moderator Users `gorm:"foreignKey:ModeratorID"`
-	TreeItems []TreeItem
 }

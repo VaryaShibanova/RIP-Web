@@ -7,5 +7,4 @@ type Anomaly struct {
 	Name        string `gorm:"type:varchar(100);not null"`
 	Description string `gorm:"type:text"`
 	Year        int    `gorm:"not null"`
-	// Pattern поле удалено - теперь пользователь вводит сам
 }

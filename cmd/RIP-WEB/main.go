@@ -21,15 +21,18 @@ func main() {
 	}
 
 	postgresString := dsn.FromEnv()
-	fmt.Println(postgresString)
+	fmt.Println("Database connection string:", postgresString)
 
+	// Инициализация репозитория
 	rep, errRep := repository.New(postgresString)
 	if errRep != nil {
 		logrus.Fatalf("error initializing repository: %v", errRep)
 	}
 
+	// Инициализация обработчика
 	hand := handler.NewHandler(rep)
 
+	// Создание и запуск приложения
 	application := pkg.NewApp(conf, router, hand)
 	application.RunApp()
 }

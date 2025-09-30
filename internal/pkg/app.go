@@ -34,10 +34,24 @@ func (a *Application) RunApp() {
 		},
 	})
 
+	// Регистрируем API handlers (REST endpoints)
+	a.Handler.RegisterAPIHandlers(a.Router)
+
+	// Регистрируем старые HTML handlers (для обратной совместимости)
 	a.Handler.RegisterHandler(a.Router)
 	a.Handler.RegisterStatic(a.Router)
 
 	serverAddress := fmt.Sprintf("%s:%d", a.Config.ServiceHost, a.Config.ServicePort)
+
+	logrus.Infof("Starting server on %s", serverAddress)
+	logrus.Info("API endpoints available at:")
+	logrus.Info("  GET  /api/anomalies - список аномалий")
+	logrus.Info("  POST /api/anomalies - создание аномалии")
+	logrus.Info("  GET  /api/trees - список заявок")
+	logrus.Info("  GET  /api/trees/cart - корзина")
+	logrus.Info("  POST /api/users/register - регистрация")
+	logrus.Info("  ... и другие методы")
+
 	if err := a.Router.Run(serverAddress); err != nil {
 		logrus.Fatal(err)
 	}

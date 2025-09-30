@@ -3,16 +3,14 @@ package repository
 import (
 	"RIP-WEB/internal/app/ds"
 	"errors"
-	"fmt"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 func (r *Repository) GetAllAnomalies() ([]ds.Anomaly, error) {
 	var anomalies []ds.Anomaly
-	err := r.db.Where("is_delete = false").Find(&anomalies).Error
+	err := r.db.Where("is_delete = false").Order("id ASC").Find(&anomalies).Error
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +44,7 @@ func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 		"%"+query+"%",
 		"%"+query+"%",
 		year,
-	).Find(&anomalies).Error
+	).Order("id ASC").Find(&anomalies).Error
 
 	if err != nil {
 		return nil, err
@@ -54,32 +52,19 @@ func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 	return anomalies, nil
 }
 
-func (r *Repository) GetCartCount() int64 {
-	var tree ds.Tree
-	var count int64
+func (r *Repository) CreateAnomaly(anomaly *ds.Anomaly) error {
+	anomaly.IsDelete = false
+	return r.db.Create(anomaly).Error
+}
 
-	// Находим черновик текущего пользователя
-	creatorID := uint(1)
-	err := r.db.Where("creator_id = ? AND status = ?", creatorID, "черновик").First(&tree).Error
-	if err != nil {
-		// Если черновика нет, возвращаем 0
-		return 0
-	}
-
-	// Считаем количество элементов в дереве
-	err = r.db.Model(&ds.TreeItem{}).Where("tree_id = ?", tree.ID).Count(&count).Error
-	if err != nil {
-		logrus.Error("Error counting tree items:", err)
-		return 0
-	}
-
-	return count
+func (r *Repository) UpdateAnomaly(anomaly *ds.Anomaly) error {
+	return r.db.Save(anomaly).Error
 }
 
 func (r *Repository) DeleteAnomaly(anomalyID uint) error {
-	err := r.db.Model(&ds.Anomaly{}).Where("id = ?", anomalyID).Update("is_delete", true).Error
-	if err != nil {
-		return fmt.Errorf("ошибка при удалении аномалии с id %d: %w", anomalyID, err)
-	}
-	return nil
+	return r.db.Model(&ds.Anomaly{}).Where("id = ?", anomalyID).Update("is_delete", true).Error
+}
+
+func (r *Repository) UpdateAnomalyImage(anomalyID uint, imageURL string) error {
+	return r.db.Model(&ds.Anomaly{}).Where("id = ?", anomalyID).Update("image", imageURL).Error
 }

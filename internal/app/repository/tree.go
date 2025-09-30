@@ -9,30 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *Repository) GetOrCreateDraftTree(userID uint) (*ds.Tree, error) {
-	var tree ds.Tree
-	err := r.db.Where("creator_id = ? AND status = ?", userID, "черновик").First(&tree).Error
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// Создаем новое дерево
-			newTree := ds.Tree{
-				Status:     "черновик",
-				DateCreate: time.Now(),
-				DateUpdate: time.Now(),
-				CreatorID:  userID,
-			}
-			err = r.db.Create(&newTree).Error
-			if err != nil {
-				return nil, err
-			}
-			return &newTree, nil
-		}
-		return nil, err
-	}
-	return &tree, nil
-}
-
 func (r *Repository) AddAnomalyToTree(treeID, anomalyID uint, anomalousRings string, calculatedYear int) error {
 	// Проверяем, не добавлена ли уже эта аномалия в дерево
 	var existingItem ds.TreeItem
@@ -61,7 +37,7 @@ func (r *Repository) AddAnomalyToTree(treeID, anomalyID uint, anomalousRings str
 
 func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, error) {
 	var tree ds.Tree
-	err := r.db.First(&tree, treeID).Error
+	err := r.db.Preload("Creator").Preload("Moderator").First(&tree, treeID).Error
 	if err != nil {
 		return nil, nil, err
 	}
@@ -75,35 +51,157 @@ func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, err
 	return &tree, treeItems, nil
 }
 
+func (r *Repository) GetTreesWithFilters(status string, dateFrom, dateTo time.Time) ([]ds.Tree, error) {
+	var trees []ds.Tree
+	query := r.db.Where("status != ? AND status != ?", "черновик", "удалён").
+		Preload("Creator").
+		Preload("Moderator")
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	if !dateFrom.IsZero() {
+		query = query.Where("date_create >= ?", dateFrom)
+	}
+
+	if !dateTo.IsZero() {
+		query = query.Where("date_create <= ?", dateTo)
+	}
+
+	err := query.Order("date_create DESC").Find(&trees).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return trees, nil
+}
+
+func (r *Repository) UpdateTree(tree *ds.Tree) error {
+	tree.DateUpdate = time.Now()
+	return r.db.Save(tree).Error
+}
+
+func (r *Repository) FormTree(treeID uint) error {
+	var tree ds.Tree
+	if err := r.db.First(&tree, treeID).Error; err != nil {
+		return err
+	}
+
+	// Проверяем обязательные поля
+	if tree.Description == "" || tree.TotalRings == 0 {
+		return fmt.Errorf("описание и общее количество колец обязательны для формирования заявки")
+	}
+
+	// Проверяем что есть аномалии в заявке
+	var itemCount int64
+	r.db.Model(&ds.TreeItem{}).Where("tree_id = ?", treeID).Count(&itemCount)
+	if itemCount == 0 {
+		return fmt.Errorf("заявка должна содержать хотя бы одну аномалию")
+	}
+
+	return r.db.Model(&tree).Updates(map[string]interface{}{
+		"status":      "сформирован",
+		"date_update": time.Now(),
+	}).Error
+}
+
+func (r *Repository) CompleteTree(treeID uint, moderatorID uint, action string) error {
+	var tree ds.Tree
+	if err := r.db.First(&tree, treeID).Error; err != nil {
+		return err
+	}
+
+	if tree.Status != "сформирован" {
+		return fmt.Errorf("можно завершать только сформированные заявки")
+	}
+
+	updates := map[string]interface{}{
+		"moderator_id": moderatorID,
+		"date_update":  time.Now(),
+		"date_finish":  time.Now(),
+	}
+
+	switch action {
+	case "complete":
+		updates["status"] = "завершён"
+		// Вычисляем итоговый год
+		finalYear := r.calculateFinalYear(treeID)
+		updates["final_year"] = finalYear
+	case "reject":
+		updates["status"] = "отклонён"
+	default:
+		return fmt.Errorf("неверное действие: %s", action)
+	}
+
+	return r.db.Model(&tree).Updates(updates).Error
+}
+
 func (r *Repository) DeleteTree(treeID uint) error {
-	// Используем RAW SQL для обновления статуса на "удалён"
-	result := r.db.Exec("UPDATE trees SET status = 'удалён', date_update = NOW() WHERE id = ?", treeID)
-	if result.Error != nil {
-		return result.Error
+	var tree ds.Tree
+	if err := r.db.First(&tree, treeID).Error; err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("дерево не найдено")
+
+	if tree.Status == "удалён" {
+		return fmt.Errorf("заявка уже удалена")
 	}
-	return nil
+
+	return r.db.Model(&tree).Updates(map[string]interface{}{
+		"status":      "удалён",
+		"date_update": time.Now(),
+	}).Error
 }
 
 func (r *Repository) GetTreeByID(treeID uint) (*ds.Tree, error) {
 	var tree ds.Tree
-	err := r.db.First(&tree, treeID).Error
+	err := r.db.Preload("Creator").Preload("Moderator").First(&tree, treeID).Error
 	if err != nil {
 		return nil, err
 	}
 	return &tree, nil
 }
 
-func (r *Repository) GetDraftTree(userID uint) (*ds.Tree, error) {
-	var tree ds.Tree
-	err := r.db.Where("creator_id = ? AND status = ?", userID, "черновик").First(&tree).Error
+func (r *Repository) UpdateTreeItem(treeID, anomalyID uint, anomalousRings string, calculatedYear int) error {
+	var treeItem ds.TreeItem
+	err := r.db.Where("tree_id = ? AND anomaly_id = ?", treeID, anomalyID).First(&treeItem).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
+		return err
 	}
-	return &tree, nil
+
+	return r.db.Model(&treeItem).Updates(map[string]interface{}{
+		"anomalous_rings": anomalousRings,
+		"calculated_year": calculatedYear,
+	}).Error
+}
+
+func (r *Repository) RemoveFromTree(treeID, anomalyID uint) error {
+	return r.db.Where("tree_id = ? AND anomaly_id = ?", treeID, anomalyID).Delete(&ds.TreeItem{}).Error
+}
+
+// Вычисление итогового года по формуле из методички
+func (r *Repository) calculateFinalYear(treeID uint) int {
+	var treeItems []ds.TreeItem
+	r.db.Where("tree_id = ?", treeID).Preload("Anomaly").Find(&treeItems)
+
+	if len(treeItems) == 0 {
+		return 0
+	}
+
+	// Вариант A - среднее значение CalculatedYear
+	total := 0
+	validCount := 0
+
+	for _, item := range treeItems {
+		if item.CalculatedYear > 0 {
+			total += item.CalculatedYear
+			validCount++
+		}
+	}
+
+	if validCount == 0 {
+		return 0
+	}
+
+	return total / validCount
 }
