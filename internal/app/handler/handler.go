@@ -55,6 +55,7 @@ func (h *Handler) DeleteTree(ctx *gin.Context) {
 		return
 	}
 
+	// Используем новую функцию с курсором
 	err = h.Repository.DeleteTree(uint(id))
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})

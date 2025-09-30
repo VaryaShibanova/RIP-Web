@@ -76,14 +76,32 @@ func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, err
 }
 
 func (r *Repository) DeleteTree(treeID uint) error {
-	// Используем RAW SQL для обновления статуса на "удалён"
-	result := r.db.Exec("UPDATE trees SET status = 'удалён', date_update = NOW() WHERE id = ?", treeID)
+	// Используем курсор для проверки и обновления
+	var tree ds.Tree
+
+	// Шаг 1: Открываем "курсор" - находим запись
+	err := r.db.Where("id = ?", treeID).First(&tree).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("дерево не найдено")
+		}
+		return err
+	}
+
+	// Шаг 2: Проверяем через "курсор" можно ли удалить
+	if tree.Status == "удалён" {
+		return fmt.Errorf("дерево уже удалено")
+	}
+
+	// Шаг 3: Обновляем запись через курсор
+	result := r.db.Model(&tree).Update("status", "удалён")
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("дерево не найдено")
-	}
+
+	// Обновляем дату через отдельный запрос
+	r.db.Model(&tree).Update("date_update", time.Now())
+
 	return nil
 }
 
