@@ -5,17 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type Handler struct {
-	db         *gorm.DB
 	Repository *repository.Repository
 }
 
 func NewHandler(r *repository.Repository) *Handler {
 	return &Handler{
-		db:         r.db,
 		Repository: r,
 	}
 }
@@ -75,11 +72,12 @@ func (h *Handler) RegisterHandler(router *gin.Engine) {
 		ctx.Redirect(302, "/anomalies")
 	})
 
-	router.GET("/anomalies", h.GetAllAnomalies)
-	router.GET("/anomaly/:id", h.GetAnomalyById)
-	router.GET("/tree/:id", h.GetTree)
-	router.POST("/tree/add", h.AddToTree)
-	router.POST("/tree/delete", h.DeleteTree)
+	// Используем старые методы для HTML
+	router.GET("/anomalies", h.GetAllAnomaliesHTML)
+	router.GET("/anomaly/:id", h.GetAnomalyByIdHTML)
+	router.GET("/tree/:id", h.GetTreeHTML)
+	router.POST("/tree/add", h.AddToTreeHTML)
+	router.POST("/tree/delete", h.DeleteTreeHTML)
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
