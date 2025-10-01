@@ -176,7 +176,7 @@ body {
     display: block;
     width: 394px;
     height: auto;
-    min-height: 380px;
+    min-height: 300px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -225,25 +225,6 @@ body {
     color: white;
     margin: 8px 0;
     text-align: center;
-}
-
-/* УБРАТЬ ПАТТЕРНЫ С КАРТОЧЕК */
-.anomaly-card p {
-    font-size: 12px;
-    color: white;
-    line-height: 1.4;
-    max-height: none;
-    height: auto;
-    overflow: visible;
-    text-overflow: unset;
-    display: block;
-    word-break: break-word;
-    min-height: 60px;
-}
-
-/* Скрыть паттерны в описании */
-.anomaly-card p strong {
-    display: none; /* Скрываем паттерны */
 }
 
 /* Кнопка добавления в дерево */

@@ -80,13 +80,9 @@
             {{end}}
         </div>
 
-        <div class="requests-count">
-            Количество аномалий в заявке: {{if .treeItems}}{{len .treeItems}}{{else}}0{{end}}
-        </div>
-
         {{if .treeItems}}
         <div class="tree-actions">
-            <form method="POST" action="/tree/delete" onsubmit="return confirm('Вы уверены, что хотите удалить заявку?')">
+            <form method="POST" action="/tree/delete">
                 <input type="hidden" name="tree_id" value="{{.tree.ID}}">
                 <button type="submit" class="delete-tree-btn">Удалить заявку</button>
             </form>
