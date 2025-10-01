@@ -36,19 +36,19 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	{
 		trees.GET("/cart", h.GetTreeCart)
 		trees.GET("", h.GetTrees)
+		trees.POST("/current/items", h.AddToTree)
 		trees.GET("/:id", h.GetTree)
 		trees.PUT("/:id", h.UpdateTree)
 		trees.PUT("/:id/form", h.FormTree)
 		trees.PUT("/:id/complete", h.CompleteTree)
 		trees.DELETE("/:id", h.DeleteTree)
-		trees.POST("/current/items", h.AddToTree)
-	}
 
-	// Домен м-м (TreeItem)
-	treeItems := api.Group("/trees/:tree_id/items")
-	{
-		treeItems.PUT("/:anomaly_id", h.UpdateTreeItem)
-		treeItems.DELETE("/:anomaly_id", h.RemoveFromTree)
+		// Tree items как подгруппа trees
+		items := trees.Group("/:id/items")
+		{
+			items.PUT("/:anomaly_id", h.UpdateTreeItem)
+			items.DELETE("/:anomaly_id", h.RemoveFromTree)
+		}
 	}
 
 	// Домен пользователя (Users)
@@ -62,26 +62,7 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	}
 }
 
-// Старые HTML handlers (оставляем для обратной совместимости)
-func (h *Handler) RegisterHandler(router *gin.Engine) {
-	// Регистрируем API handlers
-	h.RegisterAPIHandlers(router)
-
-	// Старые HTML routes
-	router.GET("/", func(ctx *gin.Context) {
-		ctx.Redirect(302, "/anomalies")
-	})
-
-	// Используем старые методы для HTML
-	router.GET("/anomalies", h.GetAllAnomaliesHTML)
-	router.GET("/anomaly/:id", h.GetAnomalyByIdHTML)
-	router.GET("/tree/:id", h.GetTreeHTML)
-	router.POST("/tree/add", h.AddToTreeHTML)
-	router.POST("/tree/delete", h.DeleteTreeHTML)
-}
-
 func (h *Handler) RegisterStatic(router *gin.Engine) {
-	router.LoadHTMLGlob("templates/*")
 	router.Static("/resources", "./resources")
 
 	router.GET("/favicon.ico", func(ctx *gin.Context) {

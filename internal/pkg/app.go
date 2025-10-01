@@ -37,8 +37,6 @@ func (a *Application) RunApp() {
 	// Регистрируем API handlers (REST endpoints)
 	a.Handler.RegisterAPIHandlers(a.Router)
 
-	// Регистрируем старые HTML handlers (для обратной совместимости)
-	a.Handler.RegisterHandler(a.Router)
 	a.Handler.RegisterStatic(a.Router)
 
 	serverAddress := fmt.Sprintf("%s:%d", a.Config.ServiceHost, a.Config.ServicePort)

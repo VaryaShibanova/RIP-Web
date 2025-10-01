@@ -24,6 +24,11 @@ func New(dsn string) (*Repository, error) {
 	}, nil
 }
 
+// GetDB возвращает экземпляр базы данных для использования в хендлерах
+func (r *Repository) GetDB() *gorm.DB {
+	return r.db
+}
+
 // Системный пользователь (согласно требованиям лабораторной)
 func (r *Repository) GetSystemUser() *ds.Users {
 	return &ds.Users{
