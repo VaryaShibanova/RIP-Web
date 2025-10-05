@@ -58,7 +58,7 @@ func (r *Repository) GetTreesWithFilters(status string, dateFrom, dateTo time.Ti
 	if status != "" {
 		query = query.Where("status = ?", status)
 	} else {
-		// ✅ ПОКАЗЫВАЕМ ВСЕ ЗАЯВКИ КРОМЕ УДАЛЕННЫХ
+		// ПОКАЗЫВАЕМ ВСЕ ЗАЯВКИ КРОМЕ УДАЛЕННЫХ
 		query = query.Where("status != ?", "удалён")
 	}
 
@@ -81,12 +81,6 @@ func (r *Repository) GetTreesWithFilters(status string, dateFrom, dateTo time.Ti
 func (r *Repository) UpdateTree(tree *ds.Tree) error {
 	tree.DateUpdate = time.Now()
 
-	//АВТОМАТИЧЕСКИЙ ПЕРЕСЧЕТ final_year
-	if tree.TotalRings > 0 {
-		finalYear := r.calculateFinalYear(tree.ID)
-		tree.FinalYear = finalYear
-	}
-
 	return r.db.Save(tree).Error
 }
 
@@ -108,6 +102,7 @@ func (r *Repository) FormTree(treeID uint) error {
 		return fmt.Errorf("заявка должна содержать хотя бы одну аномалию")
 	}
 
+	// НЕ рассчитываем final_year при формировании
 	return r.db.Model(&tree).Updates(map[string]interface{}{
 		"status":      "сформирован",
 		"date_update": time.Now(),
@@ -125,14 +120,19 @@ func (r *Repository) CompleteTree(treeID uint, moderatorID uint, action string) 
 		return fmt.Errorf("можно завершать только сформированные заявки")
 	}
 
-	// АВТОМАТИЧЕСКИ ВЫЧИСЛЯЕМ FinalYear
-	finalYear := r.calculateFinalYear(treeID)
+	// ✅ РАСЧЕТ final_year ТОЛЬКО ПРИ ЗАВЕРШЕНИИ
+	finalYear := 0
+	if action == "complete" {
+		finalYear = r.calculateFinalYear(treeID)
+	} else if action == "reject" {
+		finalYear = 0 // Для отклоненных заявок FinalYear = 0
+	}
 
 	updates := map[string]interface{}{
 		"moderator_id": moderatorID,
 		"date_update":  time.Now(),
 		"date_finish":  time.Now(),
-		"final_year":   finalYear, // ДОБАВЛЯЕМ ВЫЧИСЛЕННОЕ ЗНАЧЕНИЕ
+		"final_year":   finalYear, // УСТАНАВЛИВАЕМ РАССЧИТАННОЕ ЗНАЧЕНИЕ
 	}
 
 	switch action {
@@ -140,7 +140,6 @@ func (r *Repository) CompleteTree(treeID uint, moderatorID uint, action string) 
 		updates["status"] = "завершён"
 	case "reject":
 		updates["status"] = "отклонён"
-		updates["final_year"] = 0 // Для отклоненных заявок FinalYear = 0
 	default:
 		return fmt.Errorf("неверное действие: %s", action)
 	}
@@ -217,11 +216,7 @@ func (r *Repository) UpdateTreeItem(treeID, anomalyID uint, anomalousRings strin
 		return err
 	}
 
-	//ДОБАВЛЯЕМ: Пересчитываем final_year для заявки
-	finalYear := r.calculateFinalYear(treeID)
-	err = r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Update("final_year", finalYear).Error
-
-	return err
+	return nil
 }
 
 func (r *Repository) RemoveFromTree(treeID, anomalyID uint) error {
@@ -231,9 +226,5 @@ func (r *Repository) RemoveFromTree(treeID, anomalyID uint) error {
 		return err
 	}
 
-	// ДОБАВЛЯЕМ: Пересчитываем final_year после удаления элемента
-	finalYear := r.calculateFinalYear(treeID)
-	err = r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Update("final_year", finalYear).Error
-
-	return err
+	return nil
 }
