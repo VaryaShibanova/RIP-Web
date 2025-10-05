@@ -44,7 +44,7 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 		return
 	}
 
-	// Добавляем аномалию в заявку
+	// Добавляем аномалию в заявку с calculated_year = 0
 	err = h.Repository.AddAnomalyToTree(tree.ID, request.AnomalyID, "", 0)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -83,7 +83,7 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 	// УПРОЩЕННАЯ СТРУКТУРА - ТОЛЬКО anomalous_rings
 	var request struct {
 		AnomalousRings string `json:"anomalous_rings"`
-		// УДАЛЕНО: CalculatedYear int    `json:"calculated_year"`
+		// УДАЛЕНО: CalculatedYear - он не должен передаваться клиентом
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -91,17 +91,11 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 		return
 	}
 
-	// Получаем заявку для расчета CalculatedYear
-	tree, err := h.Repository.GetTreeByID(uint(treeID))
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Заявка не найдена"})
-		return
-	}
+	// УДАЛЕНО: автоматический расчет calculated_year
+	// calculated_year будет рассчитываться ТОЛЬКО при завершении заявки
 
-	// ВЫЧИСЛЯЕМ CalculatedYear автоматически по формуле
-	calculatedYear := h.calculateYearForAnomaly(uint(anomalyID), tree.TotalRings, request.AnomalousRings)
-
-	if err := h.Repository.UpdateTreeItem(uint(treeID), uint(anomalyID), request.AnomalousRings, calculatedYear); err != nil {
+	// Обновляем ТОЛЬКО anomalous_rings, calculated_year = 0 до завершения
+	if err := h.Repository.UpdateTreeItem(uint(treeID), uint(anomalyID), request.AnomalousRings, 0); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Элемент заявки не найден"})
 			return
@@ -113,7 +107,7 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":         "Элемент заявки обновлен",
 		"anomalous_rings": request.AnomalousRings,
-		"calculated_year": calculatedYear, // Возвращаем вычисленное значение
+		"calculated_year": 0, // Всегда 0 до завершения заявки
 	})
 }
 

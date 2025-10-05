@@ -4,6 +4,8 @@ import (
 	"RIP-WEB/internal/app/ds"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -156,14 +158,20 @@ func (r *Repository) calculateFinalYear(treeID uint) int {
 		return 0
 	}
 
-	// Вариант A - среднее значение CalculatedYear
+	// ✅ РАССЧИТЫВАЕМ calculated_year для каждого элемента ПРИ ЗАВЕРШЕНИИ
 	total := 0
 	validCount := 0
 
 	for _, item := range treeItems {
-		if item.CalculatedYear > 0 {
-			total += item.CalculatedYear
+		// Рассчитываем calculated_year по формуле для каждого элемента
+		calculatedYear := r.calculateYearForAnomaly(item.AnomalyID, item.Tree.TotalRings, item.AnomalousRings)
+
+		if calculatedYear > 0 {
+			total += calculatedYear
 			validCount++
+
+			// ✅ ОБНОВЛЯЕМ calculated_year в базе для этого элемента
+			r.db.Model(&item).Update("calculated_year", calculatedYear)
 		}
 	}
 
@@ -227,4 +235,43 @@ func (r *Repository) RemoveFromTree(treeID, anomalyID uint) error {
 	}
 
 	return nil
+}
+
+// Добавьте этот метод в repository/tree.go
+func (r *Repository) calculateYearForAnomaly(anomalyID uint, totalRings int, anomalousRings string) int {
+	// Получаем аномалию для получения Year
+	anomaly, err := r.GetAnomalyByID(int(anomalyID))
+	if err != nil || anomaly == nil {
+		return 0
+	}
+
+	// Парсим anomalous_rings чтобы найти максимальное значение
+	maxRing := r.parseMaxAnomalousRing(anomalousRings)
+
+	// Формула: Year_аномалии + (TotalRings - MaxAnomalousRing)
+	calculatedYear := anomaly.Year + (totalRings - maxRing)
+
+	return calculatedYear
+}
+
+// Вспомогательная функция для парсинга максимального кольца
+func (r *Repository) parseMaxAnomalousRing(anomalousRings string) int {
+	if anomalousRings == "" {
+		return 0
+	}
+
+	// Парсим строку вида "45,67,89,112"
+	rings := strings.Split(anomalousRings, ",")
+	maxRing := 0
+
+	for _, ringStr := range rings {
+		ringStr = strings.TrimSpace(ringStr)
+		if ring, err := strconv.Atoi(ringStr); err == nil {
+			if ring > maxRing {
+				maxRing = ring
+			}
+		}
+	}
+
+	return maxRing
 }
