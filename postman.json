@@ -363,7 +363,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"anomalous_rings\": \"45,67,89\",\n  \"calculated_year\": 1638\n}"
+							"raw": "{\n  \"anomalous_rings\": \"45,67,89\",\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/trees/1/items/1",

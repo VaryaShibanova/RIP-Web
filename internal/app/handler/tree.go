@@ -259,10 +259,27 @@ func (h *Handler) FormTree(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, updatedTree)
+	// УПРОЩЕННЫЙ ОТВЕТ - ТОЛЬКО НУЖНЫЕ ПОЛЯ
+	type SimplifiedTreeResponse struct {
+		ID          uint   `json:"id"`
+		Status      string `json:"status"`
+		Description string `json:"description"`
+		TotalRings  int    `json:"total_rings"`
+		FinalYear   int    `json:"final_year"`
+	}
+
+	simplifiedResponse := SimplifiedTreeResponse{
+		ID:          updatedTree.ID,
+		Status:      updatedTree.Status,
+		Description: updatedTree.Description,
+		TotalRings:  updatedTree.TotalRings,
+		FinalYear:   updatedTree.FinalYear,
+	}
+
+	ctx.JSON(http.StatusOK, simplifiedResponse)
 }
 
-// CompleteTree - PUT завершить/отклонить заявку
+// tree.go - обновленный метод CompleteTree
 func (h *Handler) CompleteTree(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -291,6 +308,13 @@ func (h *Handler) CompleteTree(ctx *gin.Context) {
 		return
 	}
 
+	// УПРОЩЕННЫЙ ОТВЕТ - ТОЛЬКО НУЖНЫЕ ПОЛЯ
+	type SimplifiedTreeResponse struct {
+		ID        uint   `json:"id"`
+		Status    string `json:"status"`
+		FinalYear int    `json:"final_year"`
+	}
+
 	// Получаем обновленную заявку
 	updatedTree, err := h.Repository.GetTreeByID(uint(id))
 	if err != nil {
@@ -298,7 +322,13 @@ func (h *Handler) CompleteTree(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, updatedTree)
+	simplifiedResponse := SimplifiedTreeResponse{
+		ID:        updatedTree.ID,
+		Status:    updatedTree.Status,
+		FinalYear: updatedTree.FinalYear,
+	}
+
+	ctx.JSON(http.StatusOK, simplifiedResponse)
 }
 
 // DeleteTree - DELETE удаление заявки

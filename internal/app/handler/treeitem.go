@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -56,27 +57,33 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 	})
 }
 
-// UpdateTreeItem - PUT изменение значений в м-м
+// UpdateTreeItem - PUT изменение элемента заявки
 func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
-	treeID, err := strconv.Atoi(ctx.Param("tree_id"))
+	treeIDStr := ctx.Param("id")
+	anomalyIDStr := ctx.Param("anomaly_id")
+
+	fmt.Printf("Получены параметры: id=%s, anomaly_id=%s\n", treeIDStr, anomalyIDStr)
+
+	treeID, err := strconv.Atoi(treeIDStr)
 	if err != nil {
-		fmt.Printf("Ошибка tree_id: %s\n", ctx.Param("tree_id")) // ДЛЯ ОТЛАДКИ
+		fmt.Printf("Ошибка преобразования id: %s\n", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID заявки"})
 		return
 	}
 
-	anomalyID, err := strconv.Atoi(ctx.Param("anomaly_id"))
+	anomalyID, err := strconv.Atoi(anomalyIDStr)
 	if err != nil {
-		fmt.Printf("Ошибка anomaly_id: %s\n", ctx.Param("anomaly_id")) // ДЛЯ ОТЛАДКИ
+		fmt.Printf("Ошибка преобразования anomaly_id: %s\n", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID аномалии"})
 		return
 	}
 
-	fmt.Printf("Обновление: tree_id=%d, anomaly_id=%d\n", treeID, anomalyID) // ДЛЯ ОТЛАДКИ
+	fmt.Printf("Преобразовано: id=%d, anomaly_id=%d\n", treeID, anomalyID)
 
+	// УПРОЩЕННАЯ СТРУКТУРА - ТОЛЬКО anomalous_rings
 	var request struct {
 		AnomalousRings string `json:"anomalous_rings"`
-		CalculatedYear int    `json:"calculated_year"`
+		// УДАЛЕНО: CalculatedYear int    `json:"calculated_year"`
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -84,7 +91,17 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Repository.UpdateTreeItem(uint(treeID), uint(anomalyID), request.AnomalousRings, request.CalculatedYear); err != nil {
+	// Получаем заявку для расчета CalculatedYear
+	tree, err := h.Repository.GetTreeByID(uint(treeID))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Заявка не найдена"})
+		return
+	}
+
+	// ВЫЧИСЛЯЕМ CalculatedYear автоматически по формуле
+	calculatedYear := h.calculateYearForAnomaly(uint(anomalyID), tree.TotalRings, request.AnomalousRings)
+
+	if err := h.Repository.UpdateTreeItem(uint(treeID), uint(anomalyID), request.AnomalousRings, calculatedYear); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Элемент заявки не найден"})
 			return
@@ -93,12 +110,16 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Элемент заявки обновлен"})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":         "Элемент заявки обновлен",
+		"anomalous_rings": request.AnomalousRings,
+		"calculated_year": calculatedYear, // Возвращаем вычисленное значение
+	})
 }
 
 // RemoveFromTree - DELETE удаление из заявки
 func (h *Handler) RemoveFromTree(ctx *gin.Context) {
-	treeID, err := strconv.Atoi(ctx.Param("tree_id"))
+	treeID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID заявки"})
 		return
@@ -116,4 +137,43 @@ func (h *Handler) RemoveFromTree(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "Элемент удален из заявки"})
+}
+
+// treeitem.go - добавим функцию расчета
+func (h *Handler) calculateYearForAnomaly(anomalyID uint, totalRings int, anomalousRings string) int {
+	// Получаем аномалию для получения Year
+	anomaly, err := h.Repository.GetAnomalyByID(int(anomalyID))
+	if err != nil || anomaly == nil {
+		return 0
+	}
+
+	// Парсим anomalous_rings чтобы найти максимальное значение
+	maxRing := parseMaxAnomalousRing(anomalousRings)
+
+	// Формула: Year_аномалии + (TotalRings - MaxAnomalousRing)
+	calculatedYear := anomaly.Year + (totalRings - maxRing)
+
+	return calculatedYear
+}
+
+// Вспомогательная функция для парсинга максимального кольца
+func parseMaxAnomalousRing(anomalousRings string) int {
+	if anomalousRings == "" {
+		return 0
+	}
+
+	// Парсим строку вида "45,67,89,112"
+	rings := strings.Split(anomalousRings, ",")
+	maxRing := 0
+
+	for _, ringStr := range rings {
+		ringStr = strings.TrimSpace(ringStr)
+		if ring, err := strconv.Atoi(ringStr); err == nil {
+			if ring > maxRing {
+				maxRing = ring
+			}
+		}
+	}
+
+	return maxRing
 }
