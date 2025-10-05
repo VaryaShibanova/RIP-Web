@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -59,15 +60,19 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 	treeID, err := strconv.Atoi(ctx.Param("tree_id"))
 	if err != nil {
+		fmt.Printf("Ошибка tree_id: %s\n", ctx.Param("tree_id")) // ДЛЯ ОТЛАДКИ
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID заявки"})
 		return
 	}
 
 	anomalyID, err := strconv.Atoi(ctx.Param("anomaly_id"))
 	if err != nil {
+		fmt.Printf("Ошибка anomaly_id: %s\n", ctx.Param("anomaly_id")) // ДЛЯ ОТЛАДКИ
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID аномалии"})
 		return
 	}
+
+	fmt.Printf("Обновление: tree_id=%d, anomaly_id=%d\n", treeID, anomalyID) // ДЛЯ ОТЛАДКИ
 
 	var request struct {
 		AnomalousRings string `json:"anomalous_rings"`

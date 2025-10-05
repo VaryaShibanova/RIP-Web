@@ -24,7 +24,7 @@ func (r *Repository) AddAnomalyToTree(treeID, anomalyID uint, anomalousRings str
 		return err
 	}
 
-	// Создаем новую запись
+	// Создаем новую запись БЕЗ указания ID (база данных сама сгенерирует)
 	treeItem := ds.TreeItem{
 		TreeID:         treeID,
 		AnomalyID:      anomalyID,
@@ -53,12 +53,13 @@ func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, err
 
 func (r *Repository) GetTreesWithFilters(status string, dateFrom, dateTo time.Time) ([]ds.Tree, error) {
 	var trees []ds.Tree
-	query := r.db.Where("status != ? AND status != ?", "черновик", "удалён").
-		Preload("Creator").
-		Preload("Moderator")
+	query := r.db.Preload("Creator").Preload("Moderator") // УБИРАЕМ ФИЛЬТРАЦИЮ ПО СТАТУСУ
 
 	if status != "" {
 		query = query.Where("status = ?", status)
+	} else {
+		// ✅ ПОКАЗЫВАЕМ ВСЕ ЗАЯВКИ КРОМЕ УДАЛЕННЫХ
+		query = query.Where("status != ?", "удалён")
 	}
 
 	if !dateFrom.IsZero() {

@@ -114,3 +114,38 @@ func ExtractObjectNameFromURL(url string) string {
 	parts := strings.Split(url, "/")
 	return parts[len(parts)-1]
 }
+
+// minio.go - функция с кастомным названием
+func UploadImageWithName(ctx context.Context, client *minio.Client, bucket string, file *multipart.FileHeader, anomalyID uint, customName string) (string, error) {
+	f, err := file.Open()
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	contentType := file.Header.Get("Content-Type")
+	ext := filepath.Ext(file.Filename)
+	if ext == "" {
+		switch contentType {
+		case "image/jpeg":
+			ext = ".jpg"
+		case "image/png":
+			ext = ".png"
+		case "image/gif":
+			ext = ".gif"
+		default:
+			ext = ".bin"
+		}
+	}
+
+	// ИСПОЛЬЗУЕМ кастомное название + ID для уникальности
+	objectName := fmt.Sprintf("img/%s_%d%s", customName, anomalyID, ext)
+
+	_, err = client.PutObject(ctx, bucket, objectName, f, file.Size, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	if err != nil {
+		return "", err
+	}
+	return objectName, nil
+}

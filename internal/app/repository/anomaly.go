@@ -10,7 +10,8 @@ import (
 
 func (r *Repository) GetAllAnomalies() ([]ds.Anomaly, error) {
 	var anomalies []ds.Anomaly
-	err := r.db.Where("is_delete = false").Order("id ASC").Find(&anomalies).Error
+	// Убираем фильтр is_delete, показываем все аномалии
+	err := r.db.Order("id ASC").Find(&anomalies).Error
 	if err != nil {
 		return nil, err
 	}
@@ -38,9 +39,9 @@ func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 		year = yearValue
 	}
 
-	// Поиск по названию, описанию ИЛИ году
+	// Убираем фильтр is_delete
 	err := r.db.Where(
-		"(name ILIKE ? OR description ILIKE ? OR year = ?) AND is_delete = false",
+		"(name ILIKE ? OR description ILIKE ? OR year = ?)",
 		"%"+query+"%",
 		"%"+query+"%",
 		year,
@@ -53,7 +54,6 @@ func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
 }
 
 func (r *Repository) CreateAnomaly(anomaly *ds.Anomaly) error {
-	anomaly.IsDelete = false
 	return r.db.Create(anomaly).Error
 }
 
@@ -61,9 +61,8 @@ func (r *Repository) UpdateAnomaly(anomaly *ds.Anomaly) error {
 	return r.db.Save(anomaly).Error
 }
 
-func (r *Repository) DeleteAnomaly(anomalyID uint) error {
-	return r.db.Model(&ds.Anomaly{}).Where("id = ?", anomalyID).Update("is_delete", true).Error
-}
+// УДАЛЕНО: DeleteAnomaly с soft delete
+// Вместо этого используем прямое удаление из БД
 
 func (r *Repository) UpdateAnomalyImage(anomalyID uint, imageURL string) error {
 	return r.db.Model(&ds.Anomaly{}).Where("id = ?", anomalyID).Update("image", imageURL).Error

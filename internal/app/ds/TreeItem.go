@@ -1,7 +1,7 @@
 package ds
 
 type TreeItem struct {
-	ID             uint   `gorm:"primaryKey"`
+	ID             uint   `gorm:"primaryKey;autoIncrement"`
 	TreeID         uint   `gorm:"not null;uniqueIndex:idx_tree_anomaly"`
 	AnomalyID      uint   `gorm:"not null;uniqueIndex:idx_tree_anomaly"`
 	AnomalousRings string `gorm:"type:varchar(50)"`
