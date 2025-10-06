@@ -4,6 +4,7 @@ import (
 	"RIP-WEB/internal/app/ds"
 	"RIP-WEB/internal/app/utils"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -158,12 +159,25 @@ func (h *Handler) LoginUser(ctx *gin.Context) {
 
 // LogoutUser godoc
 // @Summary Выход из системы
-// @Description Завершение сессии пользователя
+// @Description Завершение сессии пользователя с добавлением токена в blacklist
 // @Tags auth
 // @Produce json
+// @Security BearerAuth
 // @Success 200 {object} MessageResponse
 // @Router /api/users/logout [post]
 func (h *Handler) LogoutUser(ctx *gin.Context) {
+	token, exists := ctx.Get("token")
+	if exists && token != "" {
+		// Добавляем токен в blacklist на оставшееся время
+		claims, err := utils.ValidateJWT(token.(string), h.Config.JWTSecret)
+		if err == nil {
+			expiration := time.Until(claims.ExpiresAt.Time)
+			if expiration > 0 {
+				h.TokenManager.AddToBlacklist(token.(string), expiration)
+			}
+		}
+	}
+
 	// Удаляем куки
 	ctx.SetCookie("token", "", -1, "/", "", false, true)
 

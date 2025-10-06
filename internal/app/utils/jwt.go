@@ -2,9 +2,11 @@ package utils
 
 import (
 	"RIP-WEB/internal/app/ds"
+	"context"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/redis/go-redis/v9"
 )
 
 type Claims struct {
@@ -12,6 +14,16 @@ type Claims struct {
 	Login       string `json:"login"`
 	IsModerator bool   `json:"is_moderator"`
 	jwt.RegisteredClaims
+}
+
+type TokenManager struct {
+	redisClient *redis.Client
+}
+
+func NewTokenManager(redisClient *redis.Client) *TokenManager {
+	return &TokenManager{
+		redisClient: redisClient,
+	}
 }
 
 func GenerateJWT(user *ds.Users, secret string, expirationHours int) (string, error) {
@@ -47,4 +59,23 @@ func ValidateJWT(tokenString, secret string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+// AddToBlacklist добавляет токен в blacklist
+func (tm *TokenManager) AddToBlacklist(token string, expiration time.Duration) error {
+	ctx := context.Background()
+	return tm.redisClient.Set(ctx, "blacklist:"+token, "1", expiration).Err()
+}
+
+// IsTokenBlacklisted проверяет, находится ли токен в blacklist
+func (tm *TokenManager) IsTokenBlacklisted(token string) bool {
+	ctx := context.Background()
+	result, err := tm.redisClient.Get(ctx, "blacklist:"+token).Result()
+	return err == nil && result == "1"
+}
+
+// GetTokenExpiration получает оставшееся время жизни токена
+func (tm *TokenManager) GetTokenExpiration(token string) (time.Duration, error) {
+	ctx := context.Background()
+	return tm.redisClient.TTL(ctx, "blacklist:"+token).Result()
 }

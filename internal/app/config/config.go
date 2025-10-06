@@ -17,7 +17,6 @@ type Config struct {
 	RedisPort     int
 	RedisPassword string
 	RedisDB       int
-	SessionTTL    int // Добавьте это поле
 }
 
 func NewConfig() (*Config, error) {
@@ -36,6 +35,8 @@ func NewConfig() (*Config, error) {
 	viper.WatchConfig()
 
 	// Устанавливаем значения по умолчанию
+	viper.SetDefault("ServiceHost", "localhost")
+	viper.SetDefault("ServicePort", 8080)
 	viper.SetDefault("JWTSecret", "fallback-secret-key")
 	viper.SetDefault("JWTExpiration", 24)
 	viper.SetDefault("RedisHost", "localhost")

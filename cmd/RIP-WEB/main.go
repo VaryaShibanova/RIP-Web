@@ -6,9 +6,12 @@ import (
 	"RIP-WEB/internal/app/config"
 	"RIP-WEB/internal/app/dsn"
 	"RIP-WEB/internal/app/handler"
+	"RIP-WEB/internal/app/middleware"
 	"RIP-WEB/internal/app/repository"
+	"RIP-WEB/internal/app/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,6 +38,16 @@ func main() {
 		logrus.Fatalf("error loading config: %v", err)
 	}
 
+	// Инициализация Redis
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", conf.RedisHost, conf.RedisPort),
+		Password: conf.RedisPassword,
+		DB:       conf.RedisDB,
+	})
+
+	// Инициализация менеджера токенов
+	tokenManager := utils.NewTokenManager(redisClient)
+
 	postgresString := dsn.FromEnv()
 	fmt.Println("Database connection string:", postgresString)
 
@@ -44,8 +57,11 @@ func main() {
 		logrus.Fatalf("error initializing repository: %v", errRep)
 	}
 
-	// Инициализация обработчика с конфигом
-	hand := handler.NewHandler(rep, conf)
+	// Инициализация обработчика с конфигом и менеджером токенов
+	hand := handler.NewHandler(rep, conf, tokenManager)
+
+	// Регистрация middleware
+	router.Use(middleware.AuthMiddleware(conf, tokenManager))
 
 	// Регистрация обработчиков
 	hand.RegisterAPIHandlers(router)
@@ -53,8 +69,8 @@ func main() {
 
 	// Запуск сервера
 	serverAddr := fmt.Sprintf("%s:%d", conf.ServiceHost, conf.ServicePort)
-	fmt.Printf("Server started on %s\n", serverAddr)
-	fmt.Printf("Swagger docs available at http://%s/swagger/index.html\n", serverAddr)
+	fmt.Printf("🚀 Server started on %s\n", serverAddr)
+	fmt.Printf("📚 Swagger docs available at http://%s/swagger/index.html\n", serverAddr)
 
 	if err := router.Run(serverAddr); err != nil {
 		logrus.Fatalf("Failed to start server: %v", err)
