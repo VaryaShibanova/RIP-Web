@@ -1,0 +1,541 @@
+{
+	"info": {
+		"_postman_id": "35ccad3e-8014-46f9-bbb9-66384a7a67f3",
+		"name": "RIP-WEB API",
+		"description": "API для управления аномалиями, заявками и пользователями",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "48942296"
+	},
+	"item": [
+		{
+			"name": "Услуги (Аномалии)",
+			"item": [
+				{
+					"name": "Получить все аномалии",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/anomalies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Создать аномалию",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Название аномалии\",\n  \"description\": \"Описание аномалии\",\n  \"year\": 2024\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/anomalies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Получить аномалию по ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/anomalies/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Обновить аномалию",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Обновленное название\",\n  \"description\": \"Обновленное описание\",\n  \"year\": 2025\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/anomalies/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Удалить аномалию",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/anomalies/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Загрузить изображение аномалии",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": "/path/to/image.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/anomalies/1/image",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies",
+								"1",
+								"image"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Заявки",
+			"item": [
+				{
+					"name": "Получить корзину",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/trees/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Получить все заявки",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/trees",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Добавить услугу в последнюю заявку",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"anomaly_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/trees/current/items",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"current",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Получить заявку по ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/trees/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Редактировать заявку",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Обновленное описание заявки\",\n  \"total_rings\": 150\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/trees/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Сформировать заявку",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/trees/1/form",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1",
+								"form"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Завершить/отклонить заявку",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"complete\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/trees/1/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1",
+								"complete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Удалить заявку",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/trees/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Изменить элемент заявки",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"anomalous_rings\": \"45,67,89\",\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/trees/1/items/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1",
+								"items",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Удалить из заявки",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/trees/1/items/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"1",
+								"items",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Пользователи",
+			"item": [
+				{
+					"name": "Регистрация",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"login\": \"testuser\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Аутентификация",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"login\": \"testuser\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Получить профиль",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Обновить пользователя",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"login\": \"newusername\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Деавторизация",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080"
+		}
+	]
+}

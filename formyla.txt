@@ -1,0 +1,38 @@
+ФОРМУЛЫ ДЛЯ РАСЧЕТА ДАТ ДРЕВЕСИНЫ
+
+1. РАССЧИТАННЫЙ ГОД (CalculatedYear) для каждой аномалии:
+   CalculatedYear = Year_аномалии + (TotalRings - MaxAnomalousRing)
+
+   Где:
+   - Year_аномалии - год известной аномалии (например, 1600 для Уайнапутина)
+   - TotalRings - общее количество колец в образце
+   - MaxAnomalousRing - максимальный номер аномального кольца
+
+   Пример:
+   Аномалия: Извержение Уайнапутина (1600 год)
+   TotalRings = 150
+   AnomalousRings = "45,67,89,112" → MaxAnomalousRing = 112
+   CalculatedYear = 1600 + (150 - 112) = 1600 + 38 = 1638 год
+
+2. ИТОГОВЫЙ ГОД (FinalYear) для заявки:
+
+   Вариант A - СРЕДНЕЕ ЗНАЧЕНИЕ:
+   FinalYear = SUM(CalculatedYears) / COUNT(CalculatedYears)
+
+   Вариант B - НАИБОЛЕЕ ЧАСТОЕ ЗНАЧЕНИЕ:
+   FinalYear = MODE(CalculatedYears)
+
+   Пример:
+   CalculatedYears = [1638, 1645, 1638, 1650]
+   Вариант A: (1638 + 1645 + 1638 + 1650) / 4 = 1642.75 ≈ 1643 год
+   Вариант B: 1638 год (встречается 2 раза)
+
+3. ПРАВИЛА ВАЛИДАЦИИ:
+   - Номера аномальных колец должны быть ≤ TotalRings
+   - Номера аномальных колец должны быть > 0
+   - CalculatedYear не может быть меньше Year_аномалии
+
+ОБЪЯСНЕНИЕ ЛОГИКИ:
+Дерево росло X лет (TotalRings). В год аномалии образовалось кольцо №MaxAnomalousRing.
+Значит после аномалии дерево прожило еще: TotalRings - MaxAnomalousRing лет.
+Следовательно, год рубки = Год_аномалии + (TotalRings - MaxAnomalousRing)
