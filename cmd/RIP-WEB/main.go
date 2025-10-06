@@ -7,7 +7,6 @@ import (
 	"RIP-WEB/internal/app/dsn"
 	"RIP-WEB/internal/app/handler"
 	"RIP-WEB/internal/app/repository"
-	"RIP-WEB/internal/pkg"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -36,15 +35,6 @@ func main() {
 		logrus.Fatalf("error loading config: %v", err)
 	}
 
-	// Инициализация менеджера сессий
-	sessionManager := session.NewManager(
-		conf.RedisHost,
-		conf.RedisPort,
-		conf.RedisPassword,
-		conf.RedisDB,
-		conf.JWTExpiration,
-	)
-
 	postgresString := dsn.FromEnv()
 	fmt.Println("Database connection string:", postgresString)
 
@@ -54,10 +44,19 @@ func main() {
 		logrus.Fatalf("error initializing repository: %v", errRep)
 	}
 
-	// Инициализация обработчика с конфигом и менеджером сессий
-	hand := handler.NewHandler(rep, conf, sessionManager)
+	// Инициализация обработчика с конфигом
+	hand := handler.NewHandler(rep, conf)
 
-	// Создание и запуск приложения
-	application := pkg.NewApp(conf, router, hand)
-	application.RunApp()
+	// Регистрация обработчиков
+	hand.RegisterAPIHandlers(router)
+	hand.RegisterStatic(router)
+
+	// Запуск сервера
+	serverAddr := fmt.Sprintf("%s:%d", conf.ServiceHost, conf.ServicePort)
+	fmt.Printf("Server started on %s\n", serverAddr)
+	fmt.Printf("Swagger docs available at http://%s/swagger/index.html\n", serverAddr)
+
+	if err := router.Run(serverAddr); err != nil {
+		logrus.Fatalf("Failed to start server: %v", err)
+	}
 }

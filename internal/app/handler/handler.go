@@ -12,8 +12,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	// Импортируем сгенерированные Swagger docs
-	_ "RIP-WEB/docs" // Измените на эту строку
+	_ "RIP-WEB/docs" // Swagger docs
 )
 
 type Handler struct {
@@ -81,7 +80,7 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	}
 }
 
-// AuthMiddleware - middleware для аутентификации
+// AuthMiddleware - middleware для аутентификации через JWT
 func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
