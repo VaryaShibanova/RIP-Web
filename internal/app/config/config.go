@@ -9,8 +9,15 @@ import (
 )
 
 type Config struct {
-	ServiceHost string
-	ServicePort int
+	ServiceHost   string
+	ServicePort   int
+	JWTSecret     string
+	JWTExpiration int
+	RedisHost     string
+	RedisPort     int
+	RedisPassword string
+	RedisDB       int
+	SessionTTL    int // Добавьте это поле
 }
 
 func NewConfig() (*Config, error) {
@@ -28,14 +35,21 @@ func NewConfig() (*Config, error) {
 	viper.AddConfigPath(".")
 	viper.WatchConfig()
 
+	// Устанавливаем значения по умолчанию
+	viper.SetDefault("JWTSecret", "fallback-secret-key")
+	viper.SetDefault("JWTExpiration", 24)
+	viper.SetDefault("RedisHost", "localhost")
+	viper.SetDefault("RedisPort", 6379)
+	viper.SetDefault("RedisPassword", "")
+	viper.SetDefault("RedisDB", 0)
+
 	err = viper.ReadInConfig()
 	if err != nil {
-		return nil, err
+		log.Warnf("No config file found, using defaults: %v", err)
 	}
 
-	cfg := &Config{}           // создаем объект конфига
-	err = viper.Unmarshal(cfg) // читаем информацию из файла,
-	// конвертируем и затем кладем в нашу переменную cfg
+	cfg := &Config{}
+	err = viper.Unmarshal(cfg)
 	if err != nil {
 		return nil, err
 	}

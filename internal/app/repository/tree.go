@@ -275,3 +275,30 @@ func (r *Repository) parseMaxAnomalousRing(anomalousRings string) int {
 
 	return maxRing
 }
+
+// GetUserTreesWithFilters - получение заявок конкретного пользователя
+func (r *Repository) GetUserTreesWithFilters(userID uint, status string, dateFrom, dateTo time.Time) ([]ds.Tree, error) {
+	var trees []ds.Tree
+	query := r.db.Preload("Creator").Preload("Moderator").Where("creator_id = ?", userID)
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	} else {
+		query = query.Where("status != ?", "удалён")
+	}
+
+	if !dateFrom.IsZero() {
+		query = query.Where("date_create >= ?", dateFrom)
+	}
+
+	if !dateTo.IsZero() {
+		query = query.Where("date_create <= ?", dateTo)
+	}
+
+	err := query.Order("date_create DESC").Find(&trees).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return trees, nil
+}

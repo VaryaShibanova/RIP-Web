@@ -1,0 +1,20 @@
+basePath: /api
+host: localhost:8080
+info:
+  contact:
+    email: support@rip-web.ru
+    name: API Support
+    url: http://localhost:8080
+  description: API для системы исследования аномалий деревьев
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: RIP-WEB API
+  version: "1.0"
+paths: {}
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

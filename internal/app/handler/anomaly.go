@@ -12,23 +12,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetAnomalies - GET список с фильтрацией (JSON API)
+// GetAnomalies godoc
+// @Summary Получение списка аномалий
+// @Description Возвращает список аномалий с возможностью фильтрации по названию и году
+// @Tags anomalies
+// @Produce json
+// @Param name query string false "Фильтр по названию"
+// @Param year query string false "Фильтр по году"
+// @Success 200 {object} AnomaliesListResponse
+// @Router /api/anomalies [get]
 func (h *Handler) GetAnomalies(ctx *gin.Context) {
 	var anomalies []ds.Anomaly
 
-	// Фильтрация по названию
 	name := ctx.Query("name")
 	year := ctx.Query("year")
 
 	if name != "" || year != "" {
-		// Поиск с фильтрацией
 		query := ""
 		if name != "" {
 			query = name
 		}
 		anomalies, _ = h.Repository.SearchAnomalies(query)
 
-		// Дополнительная фильтрация по году если нужно
 		if year != "" {
 			filtered := []ds.Anomaly{}
 			yearInt, _ := strconv.Atoi(year)
@@ -40,11 +45,9 @@ func (h *Handler) GetAnomalies(ctx *gin.Context) {
 			anomalies = filtered
 		}
 	} else {
-		// Все аномалии
 		anomalies, _ = h.Repository.GetAllAnomalies()
 	}
 
-	// Формируем выходные данные БЕЗ description
 	response := make([]gin.H, len(anomalies))
 	for i, anomaly := range anomalies {
 		response[i] = gin.H{
@@ -60,7 +63,16 @@ func (h *Handler) GetAnomalies(ctx *gin.Context) {
 	})
 }
 
-// GetAnomaly - GET одна запись (JSON API)
+// GetAnomaly godoc
+// @Summary Получение информации об аномалии
+// @Description Возвращает полную информацию об аномалии по ID
+// @Tags anomalies
+// @Produce json
+// @Param id path int true "ID аномалии"
+// @Success 200 {object} AnomalyDetailResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/anomalies/{id} [get]
 func (h *Handler) GetAnomaly(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -78,7 +90,6 @@ func (h *Handler) GetAnomaly(ctx *gin.Context) {
 		return
 	}
 
-	// Возвращаем ВСЕ поля для одной аномалии
 	ctx.JSON(http.StatusOK, gin.H{
 		"id":          anomaly.ID,
 		"name":        anomaly.Name,
@@ -88,9 +99,25 @@ func (h *Handler) GetAnomaly(ctx *gin.Context) {
 	})
 }
 
-// CreateAnomaly - POST добавление (без изображения)
+// CreateAnomaly godoc
+// @Summary Создание новой аномалии
+// @Description Создает новую запись об аномалии (требуется аутентификация)
+// @Tags anomalies
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param anomaly body CreateAnomalyRequest true "Данные аномалии"
+// @Success 201 {object} AnomalyDetailResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /api/anomalies [post]
 func (h *Handler) CreateAnomaly(ctx *gin.Context) {
-	// ВХОДНЫЕ ДАННЫЕ - только нужные поля
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	var request struct {
 		Name        string `json:"name" binding:"required"`
 		Description string `json:"description" binding:"required"`
@@ -114,24 +141,42 @@ func (h *Handler) CreateAnomaly(ctx *gin.Context) {
 		return
 	}
 
-	// ВЫХОДНЫЕ ДАННЫЕ
 	ctx.JSON(http.StatusCreated, gin.H{
 		"id":          anomaly.ID,
 		"name":        anomaly.Name,
 		"description": anomaly.Description,
 		"year":        anomaly.Year,
+		"created_by":  userID,
 	})
 }
 
-// UpdateAnomaly - PUT изменение информации об аномалии
+// UpdateAnomaly godoc
+// @Summary Обновление информации об аномалии
+// @Description Обновляет данные аномалии (требуется аутентификация)
+// @Tags anomalies
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID аномалии"
+// @Param anomaly body UpdateAnomalyRequest true "Данные для обновления"
+// @Success 200 {object} UpdateAnomalyResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/anomalies/{id} [put]
 func (h *Handler) UpdateAnomaly(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
 		return
 	}
 
-	// ВХОДНЫЕ ДАННЫЕ для обновления
 	var request struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
@@ -153,7 +198,6 @@ func (h *Handler) UpdateAnomaly(ctx *gin.Context) {
 		return
 	}
 
-	// Обновляем только переданные поля
 	if request.Name != "" {
 		anomaly.Name = request.Name
 	}
@@ -169,7 +213,6 @@ func (h *Handler) UpdateAnomaly(ctx *gin.Context) {
 		return
 	}
 
-	// ВЫХОДНЫЕ ДАННЫЕ
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Информация об аномалии обновлена",
 		"anomaly": gin.H{
@@ -178,19 +221,36 @@ func (h *Handler) UpdateAnomaly(ctx *gin.Context) {
 			"description": anomaly.Description,
 			"image_url":   anomaly.Image,
 			"year":        anomaly.Year,
+			"updated_by":  userID,
 		},
 	})
 }
 
-// DeleteAnomaly - DELETE удаление
+// DeleteAnomaly godoc
+// @Summary Удаление аномалии
+// @Description Удаляет аномалию и связанное с ней изображение (требуется аутентификация)
+// @Tags anomalies
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID аномалии"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/anomalies/{id} [delete]
 func (h *Handler) DeleteAnomaly(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
 		return
 	}
 
-	// Получаем аномалию для удаления изображения
 	anomaly, err := h.Repository.GetAnomalyByID(id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -201,7 +261,6 @@ func (h *Handler) DeleteAnomaly(ctx *gin.Context) {
 		return
 	}
 
-	// Удаляем изображение из Minio если есть
 	if anomaly.Image != "" {
 		objectName := minio.ExtractObjectNameFromURL(anomaly.Image)
 		minioClient, _ := minio.InitMinio()
@@ -210,16 +269,39 @@ func (h *Handler) DeleteAnomaly(ctx *gin.Context) {
 		}
 	}
 
-	// ВАЖНО: Используем HARD DELETE вместо soft delete
 	if err := h.Repository.GetDB().Delete(&ds.Anomaly{}, id).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Аномалия удалена"})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":    "Аномалия удалена",
+		"deleted_by": userID,
+	})
 }
 
+// UploadAnomalyImage godoc
+// @Summary Загрузка изображения для аномалии
+// @Description Загружает изображение для аномалии в Minio (требуется аутентификация)
+// @Tags anomalies
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID аномалии"
+// @Param image formData file true "Изображение"
+// @Param filename formData string false "Название файла"
+// @Success 200 {object} UploadImageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/anomalies/{id}/image [post]
 func (h *Handler) UploadAnomalyImage(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
@@ -242,14 +324,11 @@ func (h *Handler) UploadAnomalyImage(ctx *gin.Context) {
 		return
 	}
 
-	// ПОЛУЧАЕМ название файла из формы
 	customName := ctx.PostForm("filename")
 	if customName == "" {
-		// Если название не указано, используем оригинальное имя файла
 		customName = strings.TrimSuffix(file.Filename, filepath.Ext(file.Filename))
 	}
 
-	// Удаляем старое изображение если есть
 	if anomaly.Image != "" {
 		objectName := minio.ExtractObjectNameFromURL(anomaly.Image)
 		minioClient, _ := minio.InitMinio()
@@ -258,14 +337,12 @@ func (h *Handler) UploadAnomalyImage(ctx *gin.Context) {
 		}
 	}
 
-	// Загружаем новое изображение в Minio
 	minioClient, err := minio.InitMinio()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка Minio: " + err.Error()})
 		return
 	}
 
-	// ПЕРЕДАЕМ кастомное название
 	objectName, err := minio.UploadImageWithName(context.Background(), minioClient, "images", file, uint(id), customName)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки: " + err.Error()})
@@ -279,8 +356,9 @@ func (h *Handler) UploadAnomalyImage(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message":   "Изображение загружено",
-		"image_url": imageURL,
-		"filename":  customName,
+		"message":     "Изображение загружено",
+		"image_url":   imageURL,
+		"filename":    customName,
+		"uploaded_by": userID,
 	})
 }

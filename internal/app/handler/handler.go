@@ -1,72 +1,147 @@
 package handler
 
 import (
+	"RIP-WEB/internal/app/config"
 	"RIP-WEB/internal/app/repository"
+	"RIP-WEB/internal/app/utils"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	// Импортируем сгенерированные Swagger docs
+	_ "RIP-WEB/docs" // Измените на эту строку
 )
 
 type Handler struct {
 	Repository *repository.Repository
+	Config     *config.Config
 }
 
-func NewHandler(r *repository.Repository) *Handler {
+func NewHandler(r *repository.Repository, cfg *config.Config) *Handler {
 	return &Handler{
 		Repository: r,
+		Config:     cfg,
 	}
 }
 
 func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	api := router.Group("/api")
 
-	// Домен услуги (Anomaly)
-	anomalies := api.Group("/anomalies")
-	{
-		anomalies.GET("", h.GetAnomalies)
-		anomalies.POST("", h.CreateAnomaly)
-		anomalies.GET("/:id", h.GetAnomaly)
-		anomalies.PUT("/:id", h.UpdateAnomaly)
-		anomalies.DELETE("/:id", h.DeleteAnomaly)
-		anomalies.POST("/:id/image", h.UploadAnomalyImage)
-	}
+	// Swagger документация
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Домен заявки (Tree)
-	trees := api.Group("/trees")
-	{
-		trees.GET("/cart", h.GetTreeCart)
-		trees.GET("", h.GetTrees)
-		trees.POST("/current/items", h.AddToTree)
-		trees.GET("/:id", h.GetTree)
-		trees.PUT("/:id", h.UpdateTree)
-		trees.PUT("/:id/form", h.FormTree)
-		trees.PUT("/:id/complete", h.CompleteTree)
-		trees.DELETE("/:id", h.DeleteTree)
+	// Публичные маршруты
+	api.GET("/anomalies", h.GetAnomalies)
+	api.GET("/anomalies/:id", h.GetAnomaly)
+	api.POST("/users/register", h.RegisterUser)
+	api.POST("/users/login", h.LoginUser)
 
-		// Tree items как подгруппа trees
-		items := trees.Group("/:id/items")
+	// Защищенные маршруты
+	auth := api.Group("")
+	auth.Use(h.AuthMiddleware())
+	{
+		// Пользовательские маршруты
+		auth.GET("/users/me", h.GetCurrentUser)
+		auth.POST("/users/logout", h.LogoutUser)
+		auth.PUT("/users/profile", h.UpdateUserProfile)
+
+		// Аномалии (только для авторизованных)
+		auth.POST("/anomalies", h.RequireAuth(), h.CreateAnomaly)
+		auth.PUT("/anomalies/:id", h.RequireAuth(), h.UpdateAnomaly)
+		auth.DELETE("/anomalies/:id", h.RequireAuth(), h.DeleteAnomaly)
+		auth.POST("/anomalies/:id/image", h.RequireAuth(), h.UploadAnomalyImage)
+
+		// Заявки
+		auth.GET("/trees/cart", h.RequireAuth(), h.GetTreeCart)
+		auth.GET("/trees", h.RequireAuth(), h.GetTrees)
+		auth.POST("/trees/current/items", h.RequireAuth(), h.AddToTree)
+		auth.GET("/trees/:id", h.RequireAuth(), h.GetTree)
+		auth.PUT("/trees/:id", h.RequireAuth(), h.UpdateTree)
+		auth.PUT("/trees/:id/form", h.RequireAuth(), h.FormTree)
+		auth.DELETE("/trees/:id", h.RequireAuth(), h.DeleteTree)
+
+		// Tree items
+		items := auth.Group("/trees/:id/items")
+		items.Use(h.RequireAuth())
 		{
 			items.PUT("/:anomaly_id", h.UpdateTreeItem)
 			items.DELETE("/:anomaly_id", h.RemoveFromTree)
 		}
-	}
 
-	// Домен пользователя (Users)
-	users := api.Group("/users")
-	{
-		users.POST("/register", h.RegisterUser)
-		users.GET("/profile", h.GetUserProfile)
-		users.PUT("/profile", h.UpdateUserProfile)
-		users.POST("/login", h.LoginUser)
-		users.POST("/logout", h.LogoutUser)
+		// Маршруты модератора
+		moderator := auth.Group("")
+		moderator.Use(h.RequireModerator())
+		{
+			moderator.PUT("/trees/:id/complete", h.CompleteTree)
+		}
+	}
+}
+
+// AuthMiddleware - middleware для аутентификации
+func (h *Handler) AuthMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader == "" {
+			token, err := ctx.Cookie("token")
+			if err == nil {
+				authHeader = "Bearer " + token
+			}
+		}
+
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				claims, err := utils.ValidateJWT(parts[1], h.Config.JWTSecret)
+				if err == nil {
+					ctx.Set("user_id", claims.UserID)
+					ctx.Set("login", claims.Login)
+					ctx.Set("is_moderator", claims.IsModerator)
+					ctx.Set("authenticated", true)
+				}
+			}
+		}
+		ctx.Next()
+	}
+}
+
+// RequireAuth - middleware для проверки аутентификации
+func (h *Handler) RequireAuth() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		authenticated, exists := ctx.Get("authenticated")
+		if !exists || !authenticated.(bool) {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Требуется аутентификация",
+			})
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
+	}
+}
+
+// RequireModerator - middleware для проверки прав модератора
+func (h *Handler) RequireModerator() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		isModerator, exists := ctx.Get("is_moderator")
+		if !exists || !isModerator.(bool) {
+			ctx.JSON(http.StatusForbidden, gin.H{
+				"error": "Требуются права модератора",
+			})
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
 	}
 }
 
 func (h *Handler) RegisterStatic(router *gin.Engine) {
 	router.Static("/resources", "./resources")
-
 	router.GET("/favicon.ico", func(ctx *gin.Context) {
-		ctx.Status(204) // No Content
+		ctx.Status(204)
 	})
 }
 

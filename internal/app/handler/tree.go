@@ -11,13 +11,23 @@ import (
 	"gorm.io/gorm"
 )
 
-// ДОМЕН ЗАЯВКИ (TREE)
-
-// GetTreeCart - GET иконки корзины
+// GetTreeCart godoc
+// @Summary Получение данных корзины
+// @Description Возвращает ID черновой заявки и количество элементов в ней
+// @Tags trees
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} TreeCartResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /api/trees/cart [get]
 func (h *Handler) GetTreeCart(ctx *gin.Context) {
-	user := h.Repository.GetSystemUser()
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
 
-	tree, err := h.Repository.GetDraftTree(user.ID)
+	tree, err := h.Repository.GetDraftTree(userID.(uint))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -28,7 +38,7 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 
 	if tree != nil {
 		treeID = tree.ID
-		count = h.Repository.GetCartCount(user.ID)
+		count = h.Repository.GetCartCount(userID.(uint))
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -37,8 +47,27 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 	})
 }
 
-// GetTrees - GET список заявок с фильтрацией - УПРОЩЕННАЯ ВЕРСИЯ
+// GetTrees godoc
+// @Summary Получение списка заявок
+// @Description Возвращает список заявок с фильтрацией по статусу и дате
+// @Tags trees
+// @Produce json
+// @Security BearerAuth
+// @Param status query string false "Фильтр по статусу"
+// @Param date_from query string false "Фильтр по дате от (формат: YYYY-MM-DD)"
+// @Param date_to query string false "Фильтр по дате до (формат: YYYY-MM-DD)"
+// @Success 200 {object} TreesListResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /api/trees [get]
 func (h *Handler) GetTrees(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
+	isModerator, _ := ctx.Get("is_moderator")
 	status := ctx.Query("status")
 	dateFromStr := ctx.Query("date_from")
 	dateToStr := ctx.Query("date_to")
@@ -62,23 +91,29 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 		}
 	}
 
-	trees, err := h.Repository.GetTreesWithFilters(status, dateFrom, dateTo)
+	var trees []ds.Tree
+	if isModerator.(bool) {
+		trees, err = h.Repository.GetTreesWithFilters(status, dateFrom, dateTo)
+	} else {
+		trees, err = h.Repository.GetUserTreesWithFilters(userID.(uint), status, dateFrom, dateTo)
+	}
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// ✅ УПРОЩЕННЫЙ ОТВЕТ - ТОЛЬКО НУЖНЫЕ ПОЛЯ
 	type TreeResponse struct {
 		ID             uint   `json:"id"`
 		Creator        string `json:"creator"`
 		Moderator      string `json:"moderator,omitempty"`
-		AmountOfOrders int    `json:"amount_of_orders"` // количество аномалий в заявке
+		AmountOfOrders int    `json:"amount_of_orders"`
+		Status         string `json:"status"`
+		DateCreate     string `json:"date_create"`
 	}
 
 	response := make([]TreeResponse, len(trees))
 	for i, tree := range trees {
-		// Получаем количество аномалий в заявке
 		var itemCount int64
 		h.Repository.GetDB().Model(&ds.TreeItem{}).Where("tree_id = ?", tree.ID).Count(&itemCount)
 
@@ -86,9 +121,10 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 			ID:             tree.ID,
 			Creator:        tree.Creator.Login,
 			AmountOfOrders: int(itemCount),
+			Status:         tree.Status,
+			DateCreate:     tree.DateCreate.Format("2006-01-02 15:04:05"),
 		}
 
-		// Добавляем модератора если есть
 		if tree.ModeratorID.Valid {
 			response[i].Moderator = tree.Moderator.Login
 		}
@@ -99,8 +135,26 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 	})
 }
 
-// GetTree - GET одна запись заявки (JSON API) - УПРОЩЕННАЯ ВЕРСИЯ
+// GetTree godoc
+// @Summary Получение информации о заявке
+// @Description Возвращает полную информацию о заявке и ее элементах
+// @Tags trees
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Success 200 {object} TreeDetailResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id} [get]
 func (h *Handler) GetTree(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
@@ -117,45 +171,51 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 		return
 	}
 
-	// Проверяем что заявка не удалена
+	isModerator, _ := ctx.Get("is_moderator")
+	if !isModerator.(bool) && tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Нет доступа к этой заявке"})
+		return
+	}
+
 	if tree.Status == "удалён" {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка удалена"})
 		return
 	}
 
-	// ✅ ФОРМИРУЕМ УПРОЩЕННЫЙ ОТВЕТ ТОЛЬКО С НУЖНЫМИ ПОЛЯМИ
 	type SimplifiedTreeResponse struct {
 		ID          uint   `json:"id"`
 		Description string `json:"description"`
 		TotalRings  int    `json:"total_rings"`
 		FinalYear   int    `json:"final_year"`
+		Status      string `json:"status"`
+		CreatorID   uint   `json:"creator_id"`
 	}
 
 	type SimplifiedTreeItemResponse struct {
 		AnomalyID      uint   `json:"anomaly_id"`
 		AnomalousRings string `json:"anomalous_rings"`
 		CalculatedYear int    `json:"calculated_year"`
-		AnomalyName    string `json:"anomaly_name"`  // Добавляем название аномалии для удобства
-		AnomalyImage   string `json:"anomaly_image"` // Добавляем изображение аномалии
+		AnomalyName    string `json:"anomaly_name"`
+		AnomalyImage   string `json:"anomaly_image"`
 	}
 
-	// Формируем упрощенную заявку
 	simplifiedTree := SimplifiedTreeResponse{
 		ID:          tree.ID,
 		Description: tree.Description,
 		TotalRings:  tree.TotalRings,
 		FinalYear:   tree.FinalYear,
+		Status:      tree.Status,
+		CreatorID:   tree.CreatorID,
 	}
 
-	// Формируем упрощенные элементы заявки
 	simplifiedItems := make([]SimplifiedTreeItemResponse, len(treeItems))
 	for i, item := range treeItems {
 		simplifiedItems[i] = SimplifiedTreeItemResponse{
 			AnomalyID:      item.AnomalyID,
 			AnomalousRings: item.AnomalousRings,
 			CalculatedYear: item.CalculatedYear,
-			AnomalyName:    item.Anomaly.Name,  // Берем название из связанной аномалии
-			AnomalyImage:   item.Anomaly.Image, // Берем изображение из связанной аномалии
+			AnomalyName:    item.Anomaly.Name,
+			AnomalyImage:   item.Anomaly.Image,
 		}
 	}
 
@@ -165,8 +225,28 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 	})
 }
 
-// UpdateTree - PUT изменения полей заявки - УПРОЩЕННАЯ ВЕРСИЯ
+// UpdateTree godoc
+// @Summary Обновление заявки
+// @Description Обновляет данные заявки (только для создателя и только черновые заявки)
+// @Tags trees
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param tree body UpdateTreeRequest true "Данные для обновления"
+// @Success 200 {object} TreeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id} [put]
 func (h *Handler) UpdateTree(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
@@ -183,7 +263,16 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 		return
 	}
 
-	// ✅ УПРОЩЕННАЯ СТРУКТУРА - ТОЛЬКО НУЖНЫЕ ПОЛЯ
+	if tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Можно редактировать только свои заявки"})
+		return
+	}
+
+	if tree.Status != "черновик" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Можно редактировать только черновые заявки"})
+		return
+	}
+
 	var updateData struct {
 		Description string `json:"description"`
 		TotalRings  int    `json:"total_rings"`
@@ -195,7 +284,6 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 		return
 	}
 
-	// Обновляем только разрешенные поля
 	tree.Description = updateData.Description
 	tree.TotalRings = updateData.TotalRings
 	tree.FinalYear = updateData.FinalYear
@@ -205,7 +293,6 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 		return
 	}
 
-	// ✅ УПРОЩЕННЫЙ ОТВЕТ - ТОЛЬКО НУЖНЫЕ ПОЛЯ
 	type SimplifiedTreeResponse struct {
 		ID          uint   `json:"id"`
 		Description string `json:"description"`
@@ -223,8 +310,26 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, simplifiedResponse)
 }
 
-// FormTree - PUT сформировать заявку
+// FormTree godoc
+// @Summary Формирование заявки
+// @Description Переводит заявку из статуса "черновик" в "сформирован"
+// @Tags trees
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Success 200 {object} TreeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id}/form [put]
 func (h *Handler) FormTree(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
@@ -241,7 +346,11 @@ func (h *Handler) FormTree(ctx *gin.Context) {
 		return
 	}
 
-	// Проверяем что заявка в статусе черновика
+	if tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Можно формировать только свои заявки"})
+		return
+	}
+
 	if tree.Status != "черновик" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Можно формировать только черновые заявки"})
 		return
@@ -252,14 +361,12 @@ func (h *Handler) FormTree(ctx *gin.Context) {
 		return
 	}
 
-	// Получаем обновленную заявку
 	updatedTree, err := h.Repository.GetTreeByID(uint(id))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// УПРОЩЕННЫЙ ОТВЕТ - ТОЛЬКО НУЖНЫЕ ПОЛЯ
 	type SimplifiedTreeResponse struct {
 		ID          uint   `json:"id"`
 		Status      string `json:"status"`
@@ -279,8 +386,34 @@ func (h *Handler) FormTree(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, simplifiedResponse)
 }
 
-// tree.go - обновленный метод CompleteTree
+// CompleteTree godoc
+// @Summary Завершение заявки модератором
+// @Description Завершает или отклоняет заявку (только для модераторов)
+// @Tags trees
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param action body CompleteTreeRequest true "Действие (complete/reject)"
+// @Success 200 {object} TreeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id}/complete [put]
 func (h *Handler) CompleteTree(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
+	isModerator, _ := ctx.Get("is_moderator")
+	if !isModerator.(bool) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Требуются права модератора"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
@@ -288,7 +421,7 @@ func (h *Handler) CompleteTree(ctx *gin.Context) {
 	}
 
 	var request struct {
-		Action string `json:"action" binding:"required"` // "complete" или "reject"
+		Action string `json:"action" binding:"required"`
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -301,21 +434,17 @@ func (h *Handler) CompleteTree(ctx *gin.Context) {
 		return
 	}
 
-	moderator := h.Repository.GetModerator()
-
-	if err := h.Repository.CompleteTree(uint(id), moderator.ID, request.Action); err != nil {
+	if err := h.Repository.CompleteTree(uint(id), userID.(uint), request.Action); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// УПРОЩЕННЫЙ ОТВЕТ - ТОЛЬКО НУЖНЫЕ ПОЛЯ
 	type SimplifiedTreeResponse struct {
 		ID        uint   `json:"id"`
 		Status    string `json:"status"`
 		FinalYear int    `json:"final_year"`
 	}
 
-	// Получаем обновленную заявку
 	updatedTree, err := h.Repository.GetTreeByID(uint(id))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -331,11 +460,44 @@ func (h *Handler) CompleteTree(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, simplifiedResponse)
 }
 
-// DeleteTree - DELETE удаление заявки
+// DeleteTree godoc
+// @Summary Удаление заявки
+// @Description Удаляет заявку (помечает статус как "удалён")
+// @Tags trees
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id} [delete]
 func (h *Handler) DeleteTree(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID"})
+		return
+	}
+
+	tree, err := h.Repository.GetTreeByID(uint(id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка не найдена"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Можно удалять только свои заявки"})
 		return
 	}
 

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,11 +10,25 @@ import (
 	"gorm.io/gorm"
 )
 
-// ДОМЕН М-М (TREE ITEM)
-
-// AddToTree - POST добавление в заявку-черновик
+// AddToTree godoc
+// @Summary Добавление аномалии в заявку
+// @Description Добавляет аномалию в черновую заявку пользователя
+// @Tags tree-items
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param item body AddToTreeRequest true "Данные для добавления"
+// @Success 200 {object} AddToTreeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/current/items [post]
 func (h *Handler) AddToTree(ctx *gin.Context) {
-	user := h.Repository.GetSystemUser()
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
 
 	var request struct {
 		AnomalyID uint `json:"anomaly_id" binding:"required"`
@@ -26,7 +39,6 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 		return
 	}
 
-	// Проверяем существование аномалии
 	anomaly, err := h.Repository.GetAnomalyByID(int(request.AnomalyID))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -37,14 +49,12 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 		return
 	}
 
-	// Создаем или получаем черновую заявку
-	tree, err := h.Repository.GetOrCreateDraftTree(user.ID)
+	tree, err := h.Repository.GetOrCreateDraftTree(userID.(uint))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Добавляем аномалию в заявку с calculated_year = 0
 	err = h.Repository.AddAnomalyToTree(tree.ID, request.AnomalyID, "", 0)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -57,33 +67,61 @@ func (h *Handler) AddToTree(ctx *gin.Context) {
 	})
 }
 
-// UpdateTreeItem - PUT изменение элемента заявки
+// UpdateTreeItem godoc
+// @Summary Обновление элемента заявки
+// @Description Обновляет данные элемента заявки (аномальные кольца)
+// @Tags tree-items
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param anomaly_id path int true "ID аномалии"
+// @Param item body UpdateTreeItemRequest true "Данные для обновления"
+// @Success 200 {object} UpdateTreeItemResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id}/items/{anomaly_id} [put]
 func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	treeIDStr := ctx.Param("id")
 	anomalyIDStr := ctx.Param("anomaly_id")
 
-	fmt.Printf("Получены параметры: id=%s, anomaly_id=%s\n", treeIDStr, anomalyIDStr)
-
 	treeID, err := strconv.Atoi(treeIDStr)
 	if err != nil {
-		fmt.Printf("Ошибка преобразования id: %s\n", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID заявки"})
 		return
 	}
 
 	anomalyID, err := strconv.Atoi(anomalyIDStr)
 	if err != nil {
-		fmt.Printf("Ошибка преобразования anomaly_id: %s\n", err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID аномалии"})
 		return
 	}
 
-	fmt.Printf("Преобразовано: id=%d, anomaly_id=%d\n", treeID, anomalyID)
+	tree, err := h.Repository.GetTreeByID(uint(treeID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка не найдена"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-	// УПРОЩЕННАЯ СТРУКТУРА - ТОЛЬКО anomalous_rings
+	if tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Нет доступа к этой заявке"})
+		return
+	}
+
 	var request struct {
 		AnomalousRings string `json:"anomalous_rings"`
-		// УДАЛЕНО: CalculatedYear - он не должен передаваться клиентом
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -91,10 +129,6 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 		return
 	}
 
-	// УДАЛЕНО: автоматический расчет calculated_year
-	// calculated_year будет рассчитываться ТОЛЬКО при завершении заявки
-
-	// Обновляем ТОЛЬКО anomalous_rings, calculated_year = 0 до завершения
 	if err := h.Repository.UpdateTreeItem(uint(treeID), uint(anomalyID), request.AnomalousRings, 0); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Элемент заявки не найден"})
@@ -107,12 +141,31 @@ func (h *Handler) UpdateTreeItem(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":         "Элемент заявки обновлен",
 		"anomalous_rings": request.AnomalousRings,
-		"calculated_year": 0, // Всегда 0 до завершения заявки
+		"calculated_year": 0,
 	})
 }
 
-// RemoveFromTree - DELETE удаление из заявки
+// RemoveFromTree godoc
+// @Summary Удаление элемента из заявки
+// @Description Удаляет аномалию из заявки
+// @Tags tree-items
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param anomaly_id path int true "ID аномалии"
+// @Success 200 {object} MessageResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /api/trees/{id}/items/{anomaly_id} [delete]
 func (h *Handler) RemoveFromTree(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		return
+	}
+
 	treeID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID заявки"})
@@ -125,6 +178,21 @@ func (h *Handler) RemoveFromTree(ctx *gin.Context) {
 		return
 	}
 
+	tree, err := h.Repository.GetTreeByID(uint(treeID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка не найдена"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Нет доступа к этой заявке"})
+		return
+	}
+
 	if err := h.Repository.RemoveFromTree(uint(treeID), uint(anomalyID)); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -133,30 +201,12 @@ func (h *Handler) RemoveFromTree(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Элемент удален из заявки"})
 }
 
-// treeitem.go - добавим функцию расчета
-func (h *Handler) calculateYearForAnomaly(anomalyID uint, totalRings int, anomalousRings string) int {
-	// Получаем аномалию для получения Year
-	anomaly, err := h.Repository.GetAnomalyByID(int(anomalyID))
-	if err != nil || anomaly == nil {
-		return 0
-	}
-
-	// Парсим anomalous_rings чтобы найти максимальное значение
-	maxRing := parseMaxAnomalousRing(anomalousRings)
-
-	// Формула: Year_аномалии + (TotalRings - MaxAnomalousRing)
-	calculatedYear := anomaly.Year + (totalRings - maxRing)
-
-	return calculatedYear
-}
-
 // Вспомогательная функция для парсинга максимального кольца
 func parseMaxAnomalousRing(anomalousRings string) int {
 	if anomalousRings == "" {
 		return 0
 	}
 
-	// Парсим строку вида "45,67,89,112"
 	rings := strings.Split(anomalousRings, ",")
 	maxRing := 0
 

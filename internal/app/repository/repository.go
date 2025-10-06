@@ -24,12 +24,43 @@ func New(dsn string) (*Repository, error) {
 	}, nil
 }
 
-// GetDB возвращает экземпляр базы данных для использования в хендлерах
+// GetDB возвращает экземпляр базы данных
 func (r *Repository) GetDB() *gorm.DB {
 	return r.db
 }
 
-// Системный пользователь (согласно требованиям лабораторной)
+// GetUserByLogin возвращает пользователя по логину
+func (r *Repository) GetUserByLogin(login string) (*ds.Users, error) {
+	var user ds.Users
+	err := r.db.Where("login = ?", login).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetUserByID возвращает пользователя по ID
+func (r *Repository) GetUserByID(id uint) (*ds.Users, error) {
+	var user ds.Users
+	err := r.db.First(&user, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+// CreateUser создает нового пользователя
+func (r *Repository) CreateUser(user *ds.Users) error {
+	return r.db.Create(user).Error
+}
+
+// GetSystemUser возвращает системного пользователя (для обратной совместимости)
 func (r *Repository) GetSystemUser() *ds.Users {
 	return &ds.Users{
 		ID:          1,
@@ -39,7 +70,7 @@ func (r *Repository) GetSystemUser() *ds.Users {
 	}
 }
 
-// Модератор
+// GetModerator возвращает модератора (для обратной совместимости)
 func (r *Repository) GetModerator() *ds.Users {
 	return &ds.Users{
 		ID:          2,
