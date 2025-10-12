@@ -4,7 +4,9 @@ import (
 	"RIP-WEB/internal/app/config"
 	"RIP-WEB/internal/app/repository"
 	"RIP-WEB/internal/app/utils"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -33,6 +35,8 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 
 	// Swagger документация
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Утилиты
+	api.GET("/utils/test-redis", h.RequireAuth(), h.TestRedis)
 
 	// Публичные маршруты
 	api.GET("/anomalies", h.GetAnomalies)
@@ -83,9 +87,20 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	}
 }
 
-// RequireAuth - middleware для проверки аутентификации
 func (h *Handler) RequireAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		// ПРОВЕРЯЕМ BLACKLIST ПЕРЕД ПРОВЕРКОЙ АУТЕНТИФИКАЦИИ
+		token, exists := ctx.Get("token")
+		if exists && token != "" {
+			if h.TokenManager.IsTokenBlacklisted(token.(string)) {
+				ctx.JSON(http.StatusUnauthorized, gin.H{
+					"error": "Токен недействителен (logout)",
+				})
+				ctx.Abort()
+				return
+			}
+		}
+
 		authenticated, exists := ctx.Get("authenticated")
 		if !exists || !authenticated.(bool) {
 			ctx.JSON(http.StatusUnauthorized, gin.H{
@@ -177,4 +192,42 @@ func (h *Handler) getLoginFromContext(ctx *gin.Context) string {
 	default:
 		return ""
 	}
+}
+
+// TestRedis godoc
+// @Summary Тестирование Redis
+// @Description Проверяет подключение к Redis и работу blacklist
+// @Tags utils
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} MessageResponse
+// @Router /api/utils/test-redis [get]
+func (h *Handler) TestRedis(ctx *gin.Context) {
+	// Тест подключения
+	err := h.TokenManager.TestConnection()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Redis connection failed: " + err.Error()})
+		return
+	}
+
+	// Тест записи и чтения
+	testKey := "test_key_" + fmt.Sprintf("%d", time.Now().Unix())
+	testValue := "test_value"
+
+	result, err := h.TokenManager.TestSetGet(testKey, testValue, time.Minute)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Redis operation failed: " + err.Error()})
+		return
+	}
+
+	if result != testValue {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Redis test failed: values don't match"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message":    "Redis is working correctly",
+		"test_key":   testKey,
+		"test_value": result,
+	})
 }

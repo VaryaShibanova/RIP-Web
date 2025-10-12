@@ -4,5 +4,5 @@ JWTSecret = "your-secret-key-here"
 JWTExpiration = 24
 RedisHost = "localhost"
 RedisPort = 6379
-RedisPassword = ""
+RedisPassword = "password"
 RedisDB = 0

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"RIP-WEB/internal/app/config"
@@ -44,6 +45,15 @@ func main() {
 		Password: conf.RedisPassword,
 		DB:       conf.RedisDB,
 	})
+
+	// Проверка подключения к Redis
+	ctx := context.Background()
+	_, err = redisClient.Ping(ctx).Result()
+	if err != nil {
+		logrus.Errorf("Failed to connect to Redis: %v", err)
+	} else {
+		logrus.Info("Successfully connected to Redis")
+	}
 
 	// Инициализация менеджера токенов
 	tokenManager := utils.NewTokenManager(redisClient)

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.HandlerFunc {
@@ -30,12 +31,11 @@ func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.Ha
 			if len(parts) == 2 && parts[0] == "Bearer" {
 				token := parts[1]
 
-				// ПРОВЕРЯЕМ BLACKLIST И ПРЕРЫВАЕМ ЗАПРОС
+				// ПРОВЕРЯЕМ BLACKLIST ПЕРЕД ВАЛИДАЦИЕЙ JWT
 				if tokenManager.IsTokenBlacklisted(token) {
-					ctx.JSON(http.StatusUnauthorized, gin.H{
-						"error": "Токен недействителен (logout)",
-					})
-					ctx.Abort() // ← ВАЖНО: ПРЕРЫВАЕМ ВЫПОЛНЕНИЕ
+					logrus.Info("Token found in blacklist, rejecting request")
+					ctx.Set("authenticated", false)
+					ctx.Next()
 					return
 				}
 
@@ -46,6 +46,9 @@ func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.Ha
 					ctx.Set("is_moderator", claims.IsModerator)
 					ctx.Set("authenticated", true)
 					ctx.Set("token", token)
+					logrus.Infof("User authenticated: %s (ID: %d)", claims.Login, claims.UserID)
+				} else {
+					logrus.Warnf("JWT validation failed: %v", err)
 				}
 			}
 		}

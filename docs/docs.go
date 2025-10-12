@@ -1126,6 +1126,31 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/utils/test-redis": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Проверяет подключение к Redis и работу blacklist",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "utils"
+                ],
+                "summary": "Тестирование Redis",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.MessageResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

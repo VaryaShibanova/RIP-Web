@@ -168,43 +168,45 @@ func (h *Handler) LoginUser(ctx *gin.Context) {
 // @Success 200 {object} MessageResponse
 // @Router /api/users/logout [post]
 func (h *Handler) LogoutUser(ctx *gin.Context) {
-	token, exists := ctx.Get("token")
-	if exists && token != "" {
-		// Добавляем токен в blacklist на 24 часа
-		err := h.TokenManager.AddToBlacklist(token.(string), 24*time.Hour)
-		if err != nil {
-			logrus.Errorf("Failed to add token to blacklist: %v", err)
-		} else {
-			// ПРАВИЛЬНОЕ ПРЕОБРАЗОВАНИЕ user_id
-			userID, exists := ctx.Get("user_id")
-			if exists {
-				var userIDUint uint
-				switch v := userID.(type) {
-				case uint:
-					userIDUint = v
-				case float64:
-					userIDUint = uint(v)
-				case int:
-					userIDUint = uint(v)
-				default:
-					userIDUint = 0
-				}
-				logrus.Infof("Token added to blacklist for user: %v", userIDUint)
-			}
-		}
-	} else {
-		// Если токен не найден в контексте, пытаемся извлечь из заголовка
+	// Пытаемся получить токен разными способами
+	var token string
+
+	// Из контекста (установлено middleware)
+	if tokenVal, exists := ctx.Get("token"); exists {
+		token = tokenVal.(string)
+	}
+
+	// Из заголовка Authorization
+	if token == "" {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader != "" {
 			parts := strings.Split(authHeader, " ")
 			if len(parts) == 2 && parts[0] == "Bearer" {
-				token := parts[1]
-				err := h.TokenManager.AddToBlacklist(token, 24*time.Hour)
-				if err != nil {
-					logrus.Errorf("Failed to add token to blacklist: %v", err)
-				}
+				token = parts[1]
 			}
 		}
+	}
+
+	// Из куки
+	if token == "" {
+		if cookieToken, err := ctx.Cookie("token"); err == nil {
+			token = cookieToken
+		}
+	}
+
+	if token != "" {
+		// Добавляем токен в blacklist на 24 часа
+		err := h.TokenManager.AddToBlacklist(token, 24*time.Hour)
+		if err != nil {
+			logrus.Errorf("Failed to add token to blacklist: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при выходе из системы"})
+			return
+		} else {
+			userID, _ := ctx.Get("user_id")
+			logrus.Infof("Token successfully blacklisted for user: %v", userID)
+		}
+	} else {
+		logrus.Warn("No token found for logout")
 	}
 
 	// Удаляем куки

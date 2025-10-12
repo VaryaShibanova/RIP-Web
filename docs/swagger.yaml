@@ -1052,6 +1052,21 @@ paths:
       summary: Регистрация нового пользователя
       tags:
       - auth
+  /api/utils/test-redis:
+    get:
+      description: Проверяет подключение к Redis и работу blacklist
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+      security:
+      - BearerAuth: []
+      summary: Тестирование Redis
+      tags:
+      - utils
 securityDefinitions:
   BearerAuth:
     in: header
