@@ -1,4 +1,301 @@
-basePath: /api
+basePath: /
+definitions:
+  handler.AddToTreeRequest:
+    properties:
+      anomaly_id:
+        example: 1
+        type: integer
+    required:
+    - anomaly_id
+    type: object
+  handler.AddToTreeResponse:
+    properties:
+      message:
+        example: Аномалия добавлена в заявку
+        type: string
+      tree_id:
+        example: 1
+        type: integer
+    type: object
+  handler.AnomaliesListResponse:
+    properties:
+      anomalies:
+        items:
+          $ref: '#/definitions/handler.AnomalyShortResponse'
+        type: array
+    type: object
+  handler.AnomalyDetailResponse:
+    properties:
+      description:
+        example: Описание аномалии
+        type: string
+      id:
+        example: 1
+        type: integer
+      image_url:
+        example: http://localhost:9000/images/anomaly_1.jpg
+        type: string
+      name:
+        example: Аномалия роста
+        type: string
+      year:
+        example: 2023
+        type: integer
+    type: object
+  handler.AnomalyShortResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      image_url:
+        example: http://localhost:9000/images/anomaly_1.jpg
+        type: string
+      name:
+        example: Аномалия роста
+        type: string
+      year:
+        example: 2023
+        type: integer
+    type: object
+  handler.CompleteTreeRequest:
+    properties:
+      action:
+        example: complete
+        type: string
+    required:
+    - action
+    type: object
+  handler.CreateAnomalyRequest:
+    properties:
+      description:
+        example: Описание аномалии
+        type: string
+      name:
+        example: Аномалия роста
+        type: string
+      year:
+        example: 2023
+        type: integer
+    required:
+    - description
+    - name
+    - year
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        example: Описание ошибки
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      login:
+        example: research_user
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  handler.LoginResponse:
+    properties:
+      message:
+        example: Успешная аутентификация
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/handler.UserResponse'
+    type: object
+  handler.MessageResponse:
+    properties:
+      message:
+        example: Сообщение об успехе
+        type: string
+    type: object
+  handler.RegisterRequest:
+    properties:
+      login:
+        example: new_user
+        maxLength: 25
+        minLength: 3
+        type: string
+      password:
+        example: securepassword
+        minLength: 6
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  handler.TreeCartResponse:
+    properties:
+      item_count:
+        example: 5
+        type: integer
+      tree_id:
+        example: 1
+        type: integer
+    type: object
+  handler.TreeDetailResponse:
+    properties:
+      tree:
+        $ref: '#/definitions/handler.TreeResponse'
+      treeItems:
+        items:
+          $ref: '#/definitions/handler.TreeItemResponse'
+        type: array
+    type: object
+  handler.TreeItemResponse:
+    properties:
+      anomalous_rings:
+        example: 45,67,89
+        type: string
+      anomaly_id:
+        example: 1
+        type: integer
+      anomaly_image:
+        example: http://localhost:9000/images/anomaly_1.jpg
+        type: string
+      anomaly_name:
+        example: Аномалия роста
+        type: string
+      calculated_year:
+        example: 2023
+        type: integer
+    type: object
+  handler.TreeResponse:
+    properties:
+      creator_id:
+        example: 1
+        type: integer
+      description:
+        example: Описание заявки
+        type: string
+      final_year:
+        example: 2023
+        type: integer
+      id:
+        example: 1
+        type: integer
+      status:
+        example: черновик
+        type: string
+      total_rings:
+        example: 100
+        type: integer
+    type: object
+  handler.TreeShortResponse:
+    properties:
+      amount_of_orders:
+        example: 3
+        type: integer
+      creator:
+        example: research_user
+        type: string
+      date_create:
+        example: "2023-11-15 10:30:00"
+        type: string
+      id:
+        example: 1
+        type: integer
+      moderator:
+        example: moderator_user
+        type: string
+      status:
+        example: черновик
+        type: string
+    type: object
+  handler.TreesListResponse:
+    properties:
+      trees:
+        items:
+          $ref: '#/definitions/handler.TreeShortResponse'
+        type: array
+    type: object
+  handler.UpdateAnomalyRequest:
+    properties:
+      description:
+        example: Обновленное описание
+        type: string
+      name:
+        example: Обновленное название
+        type: string
+      year:
+        example: 2024
+        type: integer
+    type: object
+  handler.UpdateAnomalyResponse:
+    properties:
+      anomaly:
+        $ref: '#/definitions/handler.AnomalyDetailResponse'
+      message:
+        example: Информация об аномалии обновлена
+        type: string
+    type: object
+  handler.UpdateTreeItemRequest:
+    properties:
+      anomalous_rings:
+        example: 45,67,89
+        type: string
+    type: object
+  handler.UpdateTreeItemResponse:
+    properties:
+      anomalous_rings:
+        example: 45,67,89
+        type: string
+      calculated_year:
+        example: 0
+        type: integer
+      message:
+        example: Элемент заявки обновлен
+        type: string
+    type: object
+  handler.UpdateTreeRequest:
+    properties:
+      description:
+        example: Обновленное описание
+        type: string
+      final_year:
+        example: 2024
+        type: integer
+      total_rings:
+        example: 120
+        type: integer
+    type: object
+  handler.UpdateUserRequest:
+    properties:
+      login:
+        example: new_login
+        type: string
+    type: object
+  handler.UploadImageResponse:
+    properties:
+      filename:
+        example: anomaly_image
+        type: string
+      image_url:
+        example: http://localhost:9000/images/anomaly_1.jpg
+        type: string
+      message:
+        example: Изображение загружено
+        type: string
+    type: object
+  handler.UserResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+      is_moderator:
+        example: false
+        type: boolean
+      login:
+        example: research_user
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -11,7 +308,716 @@ info:
     url: https://opensource.org/licenses/MIT
   title: RIP-WEB API
   version: "1.0"
-paths: {}
+paths:
+  /api/anomalies:
+    get:
+      description: Возвращает список аномалий с возможностью фильтрации по названию
+        и году
+      parameters:
+      - description: Фильтр по названию
+        in: query
+        name: name
+        type: string
+      - description: Фильтр по году
+        in: query
+        name: year
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AnomaliesListResponse'
+      summary: Получение списка аномалий
+      tags:
+      - anomalies
+    post:
+      consumes:
+      - application/json
+      description: Создает новую запись об аномалии (требуется аутентификация)
+      parameters:
+      - description: Данные аномалии
+        in: body
+        name: anomaly
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateAnomalyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.AnomalyDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создание новой аномалии
+      tags:
+      - anomalies
+  /api/anomalies/{id}:
+    delete:
+      description: Удаляет аномалию и связанное с ней изображение (требуется аутентификация)
+      parameters:
+      - description: ID аномалии
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление аномалии
+      tags:
+      - anomalies
+    get:
+      description: Возвращает полную информацию об аномалии по ID
+      parameters:
+      - description: ID аномалии
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AnomalyDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Получение информации об аномалии
+      tags:
+      - anomalies
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные аномалии (требуется аутентификация)
+      parameters:
+      - description: ID аномалии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: anomaly
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateAnomalyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UpdateAnomalyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление информации об аномалии
+      tags:
+      - anomalies
+  /api/anomalies/{id}/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает изображение для аномалии в Minio (требуется аутентификация)
+      parameters:
+      - description: ID аномалии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Изображение
+        in: formData
+        name: image
+        required: true
+        type: file
+      - description: Название файла
+        in: formData
+        name: filename
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UploadImageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Загрузка изображения для аномалии
+      tags:
+      - anomalies
+  /api/trees:
+    get:
+      description: Возвращает список заявок с фильтрацией по статусу и дате
+      parameters:
+      - description: Фильтр по статусу
+        in: query
+        name: status
+        type: string
+      - description: 'Фильтр по дате от (формат: YYYY-MM-DD)'
+        in: query
+        name: date_from
+        type: string
+      - description: 'Фильтр по дате до (формат: YYYY-MM-DD)'
+        in: query
+        name: date_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TreesListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка заявок
+      tags:
+      - trees
+  /api/trees/{id}:
+    delete:
+      description: Удаляет заявку (помечает статус как "удалён")
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление заявки
+      tags:
+      - trees
+    get:
+      description: Возвращает полную информацию о заявке и ее элементах
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TreeDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение информации о заявке
+      tags:
+      - trees
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные заявки (только для создателя и только черновые
+        заявки)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: tree
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateTreeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TreeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление заявки
+      tags:
+      - trees
+  /api/trees/{id}/complete:
+    put:
+      consumes:
+      - application/json
+      description: Завершает или отклоняет заявку (только для модераторов)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Действие (complete/reject)
+        in: body
+        name: action
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CompleteTreeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TreeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Завершение заявки модератором
+      tags:
+      - trees
+  /api/trees/{id}/form:
+    put:
+      description: Переводит заявку из статуса "черновик" в "сформирован"
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TreeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Формирование заявки
+      tags:
+      - trees
+  /api/trees/{id}/items/{anomaly_id}:
+    delete:
+      description: Удаляет аномалию из заявки
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID аномалии
+        in: path
+        name: anomaly_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление элемента из заявки
+      tags:
+      - tree-items
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные элемента заявки (аномальные кольца)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID аномалии
+        in: path
+        name: anomaly_id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateTreeItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UpdateTreeItemResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление элемента заявки
+      tags:
+      - tree-items
+  /api/trees/cart:
+    get:
+      description: Возвращает ID черновой заявки и количество элементов в ней
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TreeCartResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение данных корзины
+      tags:
+      - trees
+  /api/trees/current/items:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет аномалию в черновую заявку пользователя
+      parameters:
+      - description: Данные для добавления
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/handler.AddToTreeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AddToTreeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавление аномалии в заявку
+      tags:
+      - tree-items
+  /api/users/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход в систему с получением JWT токена
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Аутентификация пользователя
+      tags:
+      - auth
+  /api/users/logout:
+    post:
+      description: Завершение сессии пользователя с добавлением токена в blacklist
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход из системы
+      tags:
+      - auth
+  /api/users/me:
+    get:
+      description: Возвращает данные авторизованного пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение информации о текущем пользователе
+      tags:
+      - users
+  /api/users/profile:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные текущего пользователя
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление профиля пользователя
+      tags:
+      - users
+  /api/users/register:
+    post:
+      consumes:
+      - application/json
+      description: Создание учетной записи пользователя
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
 securityDefinitions:
   BearerAuth:
     in: header

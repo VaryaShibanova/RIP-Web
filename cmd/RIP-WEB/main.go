@@ -19,7 +19,7 @@ import (
 // @version 1.0
 // @description API для системы исследования аномалий деревьев
 // @host localhost:8080
-// @BasePath /api
+// @BasePath /
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -69,8 +69,8 @@ func main() {
 
 	// Запуск сервера
 	serverAddr := fmt.Sprintf("%s:%d", conf.ServiceHost, conf.ServicePort)
-	fmt.Printf("🚀 Server started on %s\n", serverAddr)
-	fmt.Printf("📚 Swagger docs available at http://%s/swagger/index.html\n", serverAddr)
+	fmt.Printf("Server started on %s\n", serverAddr)
+	fmt.Printf("Swagger docs available at http://%s/swagger/index.html\n", serverAddr)
 
 	if err := router.Run(serverAddr); err != nil {
 		logrus.Fatalf("Failed to start server: %v", err)
