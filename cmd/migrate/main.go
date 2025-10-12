@@ -39,7 +39,7 @@ func main() {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	// Создаем тестовых пользователей с хэшированными паролями
+	//Создаем тестовых пользователей с хэшированными паролями
 	users := []ds.Users{
 		{
 			Login:       "research_user",
