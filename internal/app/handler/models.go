@@ -62,18 +62,11 @@ type TreesListResponse struct {
 
 // TreeShortResponse представляет краткую информацию о заявке
 type TreeShortResponse struct {
-	ID             uint   `json:"id" example:"1"`
-	Creator        string `json:"creator" example:"research_user"`
-	Moderator      string `json:"moderator,omitempty" example:"moderator_user"`
-	AmountOfOrders int    `json:"amount_of_orders" example:"3"`
-	Status         string `json:"status" example:"черновик"`
-	DateCreate     string `json:"date_create" example:"2023-11-15 10:30:00"`
-}
-
-// TreeDetailResponse представляет полную информацию о заявке
-type TreeDetailResponse struct {
-	Tree      TreeResponse       `json:"tree"`
-	TreeItems []TreeItemResponse `json:"treeItems"`
+	ID                uint   `json:"id" example:"1"`
+	Creator           string `json:"creator" example:"research_user"`
+	Moderator         string `json:"moderator,omitempty" example:"moderator_user"`
+	AmountOfAnomalies int    `json:"amount_of_anomalies" example:"3"`
+	Status            string `json:"status,omitempty" example:"черновик"` // Добавляем для модератора
 }
 
 // TreeResponse представляет информацию о заявке
@@ -82,8 +75,14 @@ type TreeResponse struct {
 	Description string `json:"description" example:"Описание заявки"`
 	TotalRings  int    `json:"total_rings" example:"100"`
 	FinalYear   int    `json:"final_year" example:"2023"`
-	Status      string `json:"status" example:"черновик"`
+	Status      string `json:"status,omitempty" example:"черновик"` // Добавляем для модератора
 	CreatorID   uint   `json:"creator_id" example:"1"`
+}
+
+// TreeDetailResponse представляет полную информацию о заявке
+type TreeDetailResponse struct {
+	Tree      TreeResponse       `json:"tree"`
+	TreeItems []TreeItemResponse `json:"treeItems"`
 }
 
 // TreeItemResponse представляет информацию об элементе заявки

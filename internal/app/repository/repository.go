@@ -139,3 +139,31 @@ func (r *Repository) TreeExistsWithItems(treeID uint) (bool, error) {
 	}
 	return count > 0, nil
 }
+
+// GetAllTreesForModerator возвращает все заявки для модератора
+func (r *Repository) GetAllTreesForModerator(status string, dateFrom, dateTo time.Time) ([]ds.Tree, error) {
+	var trees []ds.Tree
+	query := r.db.Preload("Creator").Preload("Moderator")
+
+	// МОДЕРАТОР ВИДИТ ВСЕ ЗАЯВКИ БЕЗ ИСКЛЮЧЕНИЙ
+	// Убираем фильтр по статусу "удалён"
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	if !dateFrom.IsZero() {
+		query = query.Where("date_create >= ?", dateFrom)
+	}
+
+	if !dateTo.IsZero() {
+		query = query.Where("date_create <= ?", dateTo)
+	}
+
+	err := query.Order("date_create DESC").Find(&trees).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return trees, nil
+}

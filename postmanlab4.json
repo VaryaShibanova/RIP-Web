@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "35ccad3e-8014-46f9-bbb9-66384a7a67f3",
 		"name": "RIP-WEB API - Лабораторная 4",
-		"description": "API для управления аномалиями, заявками и пользователями с авторизацией JWT",
+		"description": "API для управления аномалиями деревьев и заявками с авторизацией JWT",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "48942296"
 	},
@@ -39,7 +39,7 @@
 					"response": []
 				},
 				{
-					"name": "Аутентификация",
+					"name": "Аутентификация исследователя",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -180,10 +180,10 @@
 			]
 		},
 		{
-			"name": "Услуги (Аномалии)",
+			"name": "Аномалии деревьев",
 			"item": [
 				{
-					"name": "Список услуг",
+					"name": "Список аномалий",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -201,39 +201,55 @@
 					"response": []
 				},
 				{
-					"name": "Добавление услуги",
+					"name": "Фильтрация аномалий по названию",
 					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Название аномалии\",\n  \"description\": \"Описание аномалии\",\n  \"year\": 2024\n}"
-						},
+						"method": "GET",
+						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/anomalies",
+							"raw": "{{base_url}}/api/anomalies?name=рост",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"anomalies"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "рост"
+								}
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Получение услуги",
+					"name": "Фильтрация аномалий по году",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/anomalies?year=2023",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies"
+							],
+							"query": [
+								{
+									"key": "year",
+									"value": "2023"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Получение аномалии",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -252,7 +268,39 @@
 					"response": []
 				},
 				{
-					"name": "Редактирование услуги",
+					"name": "Добавление аномалии (модератор)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{moderator_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Аномалия роста\",\n  \"description\": \"Описание аномалии\",\n  \"year\": 2024\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/anomalies",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"anomalies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Редактирование аномалии (модератор)",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -262,7 +310,7 @@
 							},
 							{
 								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
+								"value": "Bearer {{moderator_token}}",
 								"type": "text"
 							}
 						],
@@ -285,13 +333,13 @@
 					"response": []
 				},
 				{
-					"name": "Удаление услуги",
+					"name": "Удаление аномалии (модератор)",
 					"request": {
 						"method": "DELETE",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
+								"value": "Bearer {{moderator_token}}",
 								"type": "text"
 							}
 						],
@@ -310,13 +358,13 @@
 					"response": []
 				},
 				{
-					"name": "Добавление/замена изображения",
+					"name": "Добавление/замена изображения (модератор)",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
+								"value": "Bearer {{moderator_token}}",
 								"type": "text"
 							}
 						],
@@ -348,8 +396,33 @@
 			]
 		},
 		{
-			"name": "Заявки",
+			"name": "Заявки на исследование",
 			"item": [
+				{
+					"name": "Получить корзину",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/trees/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"trees",
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "Список заявок (гость - 401)",
 					"request": {
@@ -475,14 +548,10 @@
 					"response": []
 				},
 				{
-					"name": "Изменение статуса создателем",
+					"name": "Формирование заявки",
 					"request": {
 						"method": "PUT",
 						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
 							{
 								"key": "Authorization",
 								"value": "Bearer {{auth_token}}",
@@ -509,41 +578,7 @@
 					"response": []
 				},
 				{
-					"name": "Изменение статуса модератором (создатель - 403)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{auth_token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"action\": \"complete\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/trees/1/complete",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"trees",
-								"1",
-								"complete"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Изменение статуса модератором (успех)",
+					"name": "Завершение заявки модератором",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -604,10 +639,10 @@
 			]
 		},
 		{
-			"name": "Связь многие-ко-многим",
+			"name": "Связь заявок и аномалий",
 			"item": [
 				{
-					"name": "Добавление услуги в последнюю заявку",
+					"name": "Добавление аномалии в заявку",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -641,7 +676,7 @@
 					"response": []
 				},
 				{
-					"name": "Изменение количества/порядка/значения в м-м",
+					"name": "Обновление элемента заявки",
 					"request": {
 						"method": "PUT",
 						"header": [
@@ -676,7 +711,7 @@
 					"response": []
 				},
 				{
-					"name": "Удаление из м-м",
+					"name": "Удаление аномалии из заявки",
 					"request": {
 						"method": "DELETE",
 						"header": [
@@ -701,9 +736,14 @@
 						}
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Утилиты",
+			"item": [
 				{
-					"name": "Получить корзину",
+					"name": "Тестирование Redis",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -714,14 +754,14 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/api/trees/cart",
+							"raw": "{{base_url}}/api/utils/test-redis",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
-								"trees",
-								"cart"
+								"utils",
+								"test-redis"
 							]
 						}
 					},
@@ -742,26 +782,6 @@
 		{
 			"key": "moderator_token",
 			"value": "your_moderator_jwt_token_here"
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
 		}
 	]
 }

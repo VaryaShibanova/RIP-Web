@@ -1461,6 +1461,7 @@ const docTemplate = `{
                     "example": 1
                 },
                 "status": {
+                    "description": "Добавляем для модератора",
                     "type": "string",
                     "example": "черновик"
                 },
@@ -1473,17 +1474,13 @@ const docTemplate = `{
         "handler.TreeShortResponse": {
             "type": "object",
             "properties": {
-                "amount_of_orders": {
+                "amount_of_anomalies": {
                     "type": "integer",
                     "example": 3
                 },
                 "creator": {
                     "type": "string",
                     "example": "research_user"
-                },
-                "date_create": {
-                    "type": "string",
-                    "example": "2023-11-15 10:30:00"
                 },
                 "id": {
                     "type": "integer",
@@ -1494,6 +1491,7 @@ const docTemplate = `{
                     "example": "moderator_user"
                 },
                 "status": {
+                    "description": "Добавляем для модератора",
                     "type": "string",
                     "example": "черновик"
                 }

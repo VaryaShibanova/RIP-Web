@@ -216,6 +216,7 @@ definitions:
         example: 1
         type: integer
       status:
+        description: Добавляем для модератора
         example: черновик
         type: string
       total_rings:
@@ -224,14 +225,11 @@ definitions:
     type: object
   handler.TreeShortResponse:
     properties:
-      amount_of_orders:
+      amount_of_anomalies:
         example: 3
         type: integer
       creator:
         example: research_user
-        type: string
-      date_create:
-        example: "2023-11-15 10:30:00"
         type: string
       id:
         example: 1
@@ -240,6 +238,7 @@ definitions:
         example: moderator_user
         type: string
       status:
+        description: Добавляем для модератора
         example: черновик
         type: string
     type: object

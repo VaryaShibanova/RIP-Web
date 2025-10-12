@@ -55,13 +55,12 @@ func (r *Repository) GetTreeWithItems(treeID uint) (*ds.Tree, []ds.TreeItem, err
 
 func (r *Repository) GetTreesWithFilters(status string, dateFrom, dateTo time.Time) ([]ds.Tree, error) {
 	var trees []ds.Tree
-	query := r.db.Preload("Creator").Preload("Moderator") // УБИРАЕМ ФИЛЬТРАЦИЮ ПО СТАТУСУ
+
+	query := r.db.Preload("Creator").Preload("Moderator").
+		Where("status != ?", "удалён") // Исключаем только удаленные
 
 	if status != "" {
 		query = query.Where("status = ?", status)
-	} else {
-		// ПОКАЗЫВАЕМ ВСЕ ЗАЯВКИ КРОМЕ УДАЛЕННЫХ
-		query = query.Where("status != ?", "удалён")
 	}
 
 	if !dateFrom.IsZero() {
@@ -73,11 +72,7 @@ func (r *Repository) GetTreesWithFilters(status string, dateFrom, dateTo time.Ti
 	}
 
 	err := query.Order("date_create DESC").Find(&trees).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return trees, nil
+	return trees, err
 }
 
 func (r *Repository) UpdateTree(tree *ds.Tree) error {
@@ -281,10 +276,11 @@ func (r *Repository) GetUserTreesWithFilters(userID uint, status string, dateFro
 	var trees []ds.Tree
 	query := r.db.Preload("Creator").Preload("Moderator").Where("creator_id = ?", userID)
 
+	// ПОЛЬЗОВАТЕЛЬ ВИДИТ ТОЛЬКО СВОИ НЕУДАЛЕННЫЕ ЗАЯВКИ
+	query = query.Where("status != ?", "удалён")
+
 	if status != "" {
 		query = query.Where("status = ?", status)
-	} else {
-		query = query.Where("status != ?", "удалён")
 	}
 
 	if !dateFrom.IsZero() {

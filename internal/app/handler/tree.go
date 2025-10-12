@@ -93,8 +93,10 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 
 	var trees []ds.Tree
 	if isModerator.(bool) {
-		trees, err = h.Repository.GetTreesWithFilters(status, dateFrom, dateTo)
+		// Модератор видит ВСЕ заявки без исключений
+		trees, err = h.Repository.GetAllTreesForModerator(status, dateFrom, dateTo)
 	} else {
+		// Пользователь видит только СВОИ заявки кроме удаленных
 		trees, err = h.Repository.GetUserTreesWithFilters(userID.(uint), status, dateFrom, dateTo)
 	}
 
@@ -104,12 +106,11 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 	}
 
 	type TreeResponse struct {
-		ID             uint   `json:"id"`
-		Creator        string `json:"creator"`
-		Moderator      string `json:"moderator,omitempty"`
-		AmountOfOrders int    `json:"amount_of_orders"`
-		Status         string `json:"status"`
-		DateCreate     string `json:"date_create"`
+		ID                uint   `json:"id"`
+		Creator           string `json:"creator"`
+		Moderator         string `json:"moderator,omitempty"`
+		AmountOfAnomalies int    `json:"amount_of_anomalies"`
+		Status            string `json:"status,omitempty"` // Добавляем статус только для модератора
 	}
 
 	response := make([]TreeResponse, len(trees))
@@ -118,15 +119,18 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 		h.Repository.GetDB().Model(&ds.TreeItem{}).Where("tree_id = ?", tree.ID).Count(&itemCount)
 
 		response[i] = TreeResponse{
-			ID:             tree.ID,
-			Creator:        tree.Creator.Login,
-			AmountOfOrders: int(itemCount),
-			Status:         tree.Status,
-			DateCreate:     tree.DateCreate.Format("2006-01-02 15:04:05"),
+			ID:                tree.ID,
+			Creator:           tree.Creator.Login,
+			AmountOfAnomalies: int(itemCount),
 		}
 
 		if tree.ModeratorID.Valid {
 			response[i].Moderator = tree.Moderator.Login
+		}
+
+		// Добавляем статус только для модератора
+		if isModerator.(bool) {
+			response[i].Status = tree.Status
 		}
 	}
 
@@ -172,13 +176,16 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 	}
 
 	isModerator, _ := ctx.Get("is_moderator")
+
+	// Проверяем доступ: модератор ИЛИ создатель заявки
 	if !isModerator.(bool) && tree.CreatorID != userID.(uint) {
 		ctx.JSON(http.StatusForbidden, gin.H{"error": "Нет доступа к этой заявке"})
 		return
 	}
 
-	if tree.Status == "удалён" {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка удалена"})
+	// Для пользователя скрываем удаленные заявки других пользователей
+	if !isModerator.(bool) && tree.Status == "удалён" && tree.CreatorID != userID.(uint) {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка не найдена"})
 		return
 	}
 
@@ -187,7 +194,7 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 		Description string `json:"description"`
 		TotalRings  int    `json:"total_rings"`
 		FinalYear   int    `json:"final_year"`
-		Status      string `json:"status"`
+		Status      string `json:"status,omitempty"` // Добавляем статус только для модератора
 		CreatorID   uint   `json:"creator_id"`
 	}
 
@@ -204,8 +211,12 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 		Description: tree.Description,
 		TotalRings:  tree.TotalRings,
 		FinalYear:   tree.FinalYear,
-		Status:      tree.Status,
 		CreatorID:   tree.CreatorID,
+	}
+
+	// Добавляем статус только для модератора
+	if isModerator.(bool) {
+		simplifiedTree.Status = tree.Status
 	}
 
 	simplifiedItems := make([]SimplifiedTreeItemResponse, len(treeItems))
