@@ -26,7 +26,11 @@ func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.Ha
 
 				// Проверяем, не в blacklist ли токен
 				if tokenManager.IsTokenBlacklisted(token) {
-					ctx.Next()
+					// Токен в blacklist - отклоняем запрос
+					ctx.JSON(http.StatusUnauthorized, gin.H{
+						"error": "Токен недействителен",
+					})
+					ctx.Abort() // ← ВАЖНО: прерываем выполнение
 					return
 				}
 
