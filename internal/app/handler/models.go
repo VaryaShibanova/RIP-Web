@@ -129,3 +129,20 @@ type UpdateTreeItemResponse struct {
 	AnomalousRings string `json:"anomalous_rings" example:"45,67,89"`
 	CalculatedYear int    `json:"calculated_year" example:"0"`
 }
+
+// CompleteTreeResponse представляет ответ на завершение заявки
+type CompleteTreeResponse struct {
+	ID             uint                    `json:"id" example:"1"`
+	Status         string                  `json:"status" example:"завершён"`
+	FinalYear      int                     `json:"final_year" example:"2023"`
+	Anomalies      []AnomalyCalculatedYear `json:"anomalies"`
+	TotalAnomalies int                     `json:"total_anomalies" example:"3"`
+}
+
+// AnomalyCalculatedYear представляет аномалию с рассчитанным годом
+type AnomalyCalculatedYear struct {
+	AnomalyID      uint   `json:"anomaly_id" example:"1"`
+	AnomalyName    string `json:"anomaly_name" example:"Аномалия роста"`
+	AnomalousRings string `json:"anomalous_rings" example:"45,67,89"`
+	CalculatedYear int    `json:"calculated_year" example:"2023"`
+}

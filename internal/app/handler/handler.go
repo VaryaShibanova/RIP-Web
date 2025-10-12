@@ -40,20 +40,14 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	api.POST("/users/register", h.RegisterUser)
 	api.POST("/users/login", h.LoginUser)
 
-	// Защищенные маршруты (middleware уже применено глобально)
+	// Защищенные маршруты (требуют аутентификации)
 	{
 		// Пользовательские маршруты
 		api.GET("/users/me", h.RequireAuth(), h.GetCurrentUser)
 		api.POST("/users/logout", h.RequireAuth(), h.LogoutUser)
 		api.PUT("/users/profile", h.RequireAuth(), h.UpdateUserProfile)
 
-		// Аномалии (только для авторизованных)
-		api.POST("/anomalies", h.RequireAuth(), h.CreateAnomaly)
-		api.PUT("/anomalies/:id", h.RequireAuth(), h.UpdateAnomaly)
-		api.DELETE("/anomalies/:id", h.RequireAuth(), h.DeleteAnomaly)
-		api.POST("/anomalies/:id/image", h.RequireAuth(), h.UploadAnomalyImage)
-
-		// Заявки
+		// Заявки (доступны всем авторизованным пользователям)
 		api.GET("/trees/cart", h.RequireAuth(), h.GetTreeCart)
 		api.GET("/trees", h.RequireAuth(), h.GetTrees)
 		api.POST("/trees/current/items", h.RequireAuth(), h.AddToTree)
@@ -69,13 +63,23 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 			items.PUT("/:anomaly_id", h.UpdateTreeItem)
 			items.DELETE("/:anomaly_id", h.RemoveFromTree)
 		}
+	}
 
-		// Маршруты модератора
-		moderator := api.Group("")
-		moderator.Use(h.RequireModerator())
-		{
-			moderator.PUT("/trees/:id/complete", h.CompleteTree)
-		}
+	// Маршруты модератора - управление аномалиями
+	moderatorAnomalies := api.Group("/anomalies")
+	moderatorAnomalies.Use(h.RequireAuth(), h.RequireModerator())
+	{
+		moderatorAnomalies.POST("", h.CreateAnomaly)
+		moderatorAnomalies.PUT("/:id", h.UpdateAnomaly)
+		moderatorAnomalies.DELETE("/:id", h.DeleteAnomaly)
+		moderatorAnomalies.POST("/:id/image", h.UploadAnomalyImage)
+	}
+
+	// Маршруты модератора - завершение заявок
+	moderatorTrees := api.Group("/trees")
+	moderatorTrees.Use(h.RequireAuth(), h.RequireModerator())
+	{
+		moderatorTrees.PUT("/:id/complete", h.CompleteTree)
 	}
 }
 
@@ -122,4 +126,55 @@ func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, err error)
 		"status":      "error",
 		"description": err.Error(),
 	})
+}
+
+// getUserIDFromContext безопасно извлекает user_id из контекста
+func (h *Handler) getUserIDFromContext(ctx *gin.Context) (uint, bool) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		return 0, false
+	}
+
+	switch v := userID.(type) {
+	case uint:
+		return v, true
+	case float64:
+		return uint(v), true
+	case int:
+		return uint(v), true
+	case int64:
+		return uint(v), true
+	default:
+		return 0, false
+	}
+}
+
+// getIsModeratorFromContext безопасно извлекает is_moderator из контекста
+func (h *Handler) getIsModeratorFromContext(ctx *gin.Context) bool {
+	isModerator, exists := ctx.Get("is_moderator")
+	if !exists {
+		return false
+	}
+
+	switch v := isModerator.(type) {
+	case bool:
+		return v
+	default:
+		return false
+	}
+}
+
+// getLoginFromContext безопасно извлекает login из контекста
+func (h *Handler) getLoginFromContext(ctx *gin.Context) string {
+	login, exists := ctx.Get("login")
+	if !exists {
+		return ""
+	}
+
+	switch v := login.(type) {
+	case string:
+		return v
+	default:
+		return ""
+	}
 }

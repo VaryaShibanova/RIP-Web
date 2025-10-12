@@ -694,7 +694,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.TreeResponse"
+                            "$ref": "#/definitions/handler.CompleteTreeResponse"
                         }
                     },
                     "400": {
@@ -1165,6 +1165,27 @@ const docTemplate = `{
                 }
             }
         },
+        "handler.AnomalyCalculatedYear": {
+            "type": "object",
+            "properties": {
+                "anomalous_rings": {
+                    "type": "string",
+                    "example": "45,67,89"
+                },
+                "anomaly_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "anomaly_name": {
+                    "type": "string",
+                    "example": "Аномалия роста"
+                },
+                "calculated_year": {
+                    "type": "integer",
+                    "example": 2023
+                }
+            }
+        },
         "handler.AnomalyDetailResponse": {
             "type": "object",
             "properties": {
@@ -1220,6 +1241,33 @@ const docTemplate = `{
                 "action": {
                     "type": "string",
                     "example": "complete"
+                }
+            }
+        },
+        "handler.CompleteTreeResponse": {
+            "type": "object",
+            "properties": {
+                "anomalies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.AnomalyCalculatedYear"
+                    }
+                },
+                "final_year": {
+                    "type": "integer",
+                    "example": 2023
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "status": {
+                    "type": "string",
+                    "example": "завершён"
+                },
+                "total_anomalies": {
+                    "type": "integer",
+                    "example": 3
                 }
             }
         },

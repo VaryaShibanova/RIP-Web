@@ -24,6 +24,21 @@ definitions:
           $ref: '#/definitions/handler.AnomalyShortResponse'
         type: array
     type: object
+  handler.AnomalyCalculatedYear:
+    properties:
+      anomalous_rings:
+        example: 45,67,89
+        type: string
+      anomaly_id:
+        example: 1
+        type: integer
+      anomaly_name:
+        example: Аномалия роста
+        type: string
+      calculated_year:
+        example: 2023
+        type: integer
+    type: object
   handler.AnomalyDetailResponse:
     properties:
       description:
@@ -64,6 +79,25 @@ definitions:
         type: string
     required:
     - action
+    type: object
+  handler.CompleteTreeResponse:
+    properties:
+      anomalies:
+        items:
+          $ref: '#/definitions/handler.AnomalyCalculatedYear'
+        type: array
+      final_year:
+        example: 2023
+        type: integer
+      id:
+        example: 1
+        type: integer
+      status:
+        example: завершён
+        type: string
+      total_anomalies:
+        example: 3
+        type: integer
     type: object
   handler.CreateAnomalyRequest:
     properties:
@@ -683,7 +717,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handler.TreeResponse'
+            $ref: '#/definitions/handler.CompleteTreeResponse'
         "400":
           description: Bad Request
           schema:

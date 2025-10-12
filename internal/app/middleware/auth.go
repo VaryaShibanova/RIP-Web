@@ -19,18 +19,23 @@ func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.Ha
 			}
 		}
 
+		// Сбрасываем аутентификацию по умолчанию
+		ctx.Set("authenticated", false)
+		ctx.Set("user_id", uint(0))
+		ctx.Set("is_moderator", false)
+		ctx.Set("login", "")
+
 		if authHeader != "" {
 			parts := strings.Split(authHeader, " ")
 			if len(parts) == 2 && parts[0] == "Bearer" {
 				token := parts[1]
 
-				// Проверяем, не в blacklist ли токен
+				// ПРОВЕРЯЕМ BLACKLIST И ПРЕРЫВАЕМ ЗАПРОС
 				if tokenManager.IsTokenBlacklisted(token) {
-					// Токен в blacklist - отклоняем запрос
 					ctx.JSON(http.StatusUnauthorized, gin.H{
-						"error": "Токен недействителен",
+						"error": "Токен недействителен (logout)",
 					})
-					ctx.Abort() // ← ВАЖНО: прерываем выполнение
+					ctx.Abort() // ← ВАЖНО: ПРЕРЫВАЕМ ВЫПОЛНЕНИЕ
 					return
 				}
 

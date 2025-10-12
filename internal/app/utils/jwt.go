@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 type Claims struct {
@@ -64,14 +65,27 @@ func ValidateJWT(tokenString, secret string) (*Claims, error) {
 // AddToBlacklist добавляет токен в blacklist
 func (tm *TokenManager) AddToBlacklist(token string, expiration time.Duration) error {
 	ctx := context.Background()
-	return tm.redisClient.Set(ctx, "blacklist:"+token, "1", expiration).Err()
+	err := tm.redisClient.Set(ctx, "blacklist:"+token, "1", expiration).Err()
+	if err != nil {
+		logrus.Errorf("Failed to add token to Redis blacklist: %v", err)
+		return err
+	}
+	logrus.Infof("Token successfully added to blacklist, expiration: %v", expiration)
+	return nil
 }
 
 // IsTokenBlacklisted проверяет, находится ли токен в blacklist
 func (tm *TokenManager) IsTokenBlacklisted(token string) bool {
 	ctx := context.Background()
 	result, err := tm.redisClient.Get(ctx, "blacklist:"+token).Result()
-	return err == nil && result == "1"
+	if err == nil && result == "1" {
+		logrus.Infof("Token found in blacklist, rejecting request")
+		return true
+	}
+	if err != nil && err != redis.Nil {
+		logrus.Errorf("Redis error while checking blacklist: %v", err)
+	}
+	return false
 }
 
 // GetTokenExpiration получает оставшееся время жизни токена

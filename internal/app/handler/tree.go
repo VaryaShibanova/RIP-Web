@@ -395,21 +395,21 @@ func (h *Handler) FormTree(ctx *gin.Context) {
 // @Security BearerAuth
 // @Param id path int true "ID заявки"
 // @Param action body CompleteTreeRequest true "Действие (complete/reject)"
-// @Success 200 {object} TreeResponse
+// @Success 200 {object} CompleteTreeResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
 // @Failure 403 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Router /api/trees/{id}/complete [put]
 func (h *Handler) CompleteTree(ctx *gin.Context) {
-	userID, exists := ctx.Get("user_id")
+	userID, exists := h.getUserIDFromContext(ctx)
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
 		return
 	}
 
-	isModerator, _ := ctx.Get("is_moderator")
-	if !isModerator.(bool) {
+	isModerator := h.getIsModeratorFromContext(ctx)
+	if !isModerator {
 		ctx.JSON(http.StatusForbidden, gin.H{"error": "Требуются права модератора"})
 		return
 	}
@@ -434,30 +434,69 @@ func (h *Handler) CompleteTree(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Repository.CompleteTree(uint(id), userID.(uint), request.Action); err != nil {
+	// Проверяем существование заявки перед завершением
+	existingTree, err := h.Repository.GetTreeByID(uint(id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Заявка не найдена"})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if existingTree.Status != "сформирован" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Можно завершать только сформированные заявки"})
+		return
+	}
+
+	if err := h.Repository.CompleteTree(uint(id), userID, request.Action); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	type SimplifiedTreeResponse struct {
-		ID        uint   `json:"id"`
-		Status    string `json:"status"`
-		FinalYear int    `json:"final_year"`
-	}
-
-	updatedTree, err := h.Repository.GetTreeByID(uint(id))
+	// Получаем обновленную заявку с рассчитанными годами
+	updatedTree, updatedTreeItems, err := h.Repository.GetTreeWithItems(uint(id))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	simplifiedResponse := SimplifiedTreeResponse{
-		ID:        updatedTree.ID,
-		Status:    updatedTree.Status,
-		FinalYear: updatedTree.FinalYear,
+	type AnomalyCalculatedYear struct {
+		AnomalyID      uint   `json:"anomaly_id"`
+		AnomalyName    string `json:"anomaly_name"`
+		AnomalousRings string `json:"anomalous_rings"`
+		CalculatedYear int    `json:"calculated_year"`
 	}
 
-	ctx.JSON(http.StatusOK, simplifiedResponse)
+	type CompleteTreeResponse struct {
+		ID             uint                    `json:"id"`
+		Status         string                  `json:"status"`
+		FinalYear      int                     `json:"final_year"`
+		Anomalies      []AnomalyCalculatedYear `json:"anomalies"`
+		TotalAnomalies int                     `json:"total_anomalies"`
+	}
+
+	// Формируем список аномалий с calculated_year
+	anomalies := make([]AnomalyCalculatedYear, len(updatedTreeItems))
+	for i, item := range updatedTreeItems {
+		anomalies[i] = AnomalyCalculatedYear{
+			AnomalyID:      item.AnomalyID,
+			AnomalyName:    item.Anomaly.Name,
+			AnomalousRings: item.AnomalousRings,
+			CalculatedYear: item.CalculatedYear,
+		}
+	}
+
+	response := CompleteTreeResponse{
+		ID:             updatedTree.ID,
+		Status:         updatedTree.Status,
+		FinalYear:      updatedTree.FinalYear,
+		Anomalies:      anomalies,
+		TotalAnomalies: len(anomalies),
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 // DeleteTree godoc

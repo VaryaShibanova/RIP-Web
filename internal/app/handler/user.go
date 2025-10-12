@@ -4,9 +4,11 @@ import (
 	"RIP-WEB/internal/app/ds"
 	"RIP-WEB/internal/app/utils"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -168,12 +170,39 @@ func (h *Handler) LoginUser(ctx *gin.Context) {
 func (h *Handler) LogoutUser(ctx *gin.Context) {
 	token, exists := ctx.Get("token")
 	if exists && token != "" {
-		// Добавляем токен в blacklist на оставшееся время
-		claims, err := utils.ValidateJWT(token.(string), h.Config.JWTSecret)
-		if err == nil {
-			expiration := time.Until(claims.ExpiresAt.Time)
-			if expiration > 0 {
-				h.TokenManager.AddToBlacklist(token.(string), expiration)
+		// Добавляем токен в blacklist на 24 часа
+		err := h.TokenManager.AddToBlacklist(token.(string), 24*time.Hour)
+		if err != nil {
+			logrus.Errorf("Failed to add token to blacklist: %v", err)
+		} else {
+			// ПРАВИЛЬНОЕ ПРЕОБРАЗОВАНИЕ user_id
+			userID, exists := ctx.Get("user_id")
+			if exists {
+				var userIDUint uint
+				switch v := userID.(type) {
+				case uint:
+					userIDUint = v
+				case float64:
+					userIDUint = uint(v)
+				case int:
+					userIDUint = uint(v)
+				default:
+					userIDUint = 0
+				}
+				logrus.Infof("Token added to blacklist for user: %v", userIDUint)
+			}
+		}
+	} else {
+		// Если токен не найден в контексте, пытаемся извлечь из заголовка
+		authHeader := ctx.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token := parts[1]
+				err := h.TokenManager.AddToBlacklist(token, 24*time.Hour)
+				if err != nil {
+					logrus.Errorf("Failed to add token to blacklist: %v", err)
+				}
 			}
 		}
 	}
