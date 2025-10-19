@@ -70,6 +70,9 @@ func main() {
 	// Инициализация обработчика с конфигом и менеджером токенов
 	hand := handler.NewHandler(rep, conf, tokenManager)
 
+	// Добавьте эту строку ПЕРВОЙ в middleware
+	router.Use(middleware.CORSMiddleware())
+
 	// Регистрация middleware
 	router.Use(middleware.AuthMiddleware(conf, tokenManager))
 
