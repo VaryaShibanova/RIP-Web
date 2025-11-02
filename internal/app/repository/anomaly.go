@@ -3,7 +3,6 @@ package repository
 import (
 	"RIP-WEB/internal/app/ds"
 	"errors"
-	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -30,22 +29,41 @@ func (r *Repository) GetAnomalyByID(id int) (*ds.Anomaly, error) {
 	return &anomaly, nil
 }
 
-func (r *Repository) SearchAnomalies(query string) ([]ds.Anomaly, error) {
+func (r *Repository) SearchAnomalies(name string, year string) ([]ds.Anomaly, error) {
 	var anomalies []ds.Anomaly
 
-	// Пытаемся преобразовать запрос в число (для поиска по году)
-	year := 0
-	if yearValue, err := strconv.Atoi(query); err == nil {
-		year = yearValue
+	query := r.db.Model(&ds.Anomaly{})
+
+	// Добавляем условия поиска по названию ИЛИ году
+	conditions := []string{}
+	args := []interface{}{}
+
+	if name != "" {
+		conditions = append(conditions, "name ILIKE ?")
+		args = append(args, "%"+name+"%")
+	}
+
+	if year != "" {
+		// ЧАСТИЧНЫЙ поиск по году - ищем вхождение строки в год
+		conditions = append(conditions, "CAST(year AS TEXT) ILIKE ?")
+		args = append(args, "%"+year+"%")
+	}
+
+	// Если есть условия, применяем их
+	if len(conditions) > 0 {
+		// Объединяем условия через OR
+		whereClause := ""
+		for i, condition := range conditions {
+			if i > 0 {
+				whereClause += " OR "
+			}
+			whereClause += condition
+		}
+		query = query.Where(whereClause, args...)
 	}
 
 	// Убираем фильтр is_delete
-	err := r.db.Where(
-		"(name ILIKE ? OR description ILIKE ? OR year = ?)",
-		"%"+query+"%",
-		"%"+query+"%",
-		year,
-	).Order("id ASC").Find(&anomalies).Error
+	err := query.Order("id ASC").Find(&anomalies).Error
 
 	if err != nil {
 		return nil, err

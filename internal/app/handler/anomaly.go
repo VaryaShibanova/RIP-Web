@@ -27,25 +27,22 @@ func (h *Handler) GetAnomalies(ctx *gin.Context) {
 	name := ctx.Query("name")
 	year := ctx.Query("year")
 
+	// Если есть параметры поиска - используем поиск
 	if name != "" || year != "" {
-		query := ""
-		if name != "" {
-			query = name
-		}
-		anomalies, _ = h.Repository.SearchAnomalies(query)
-
-		if year != "" {
-			filtered := []ds.Anomaly{}
-			yearInt, _ := strconv.Atoi(year)
-			for _, anomaly := range anomalies {
-				if anomaly.Year == yearInt {
-					filtered = append(filtered, anomaly)
-				}
-			}
-			anomalies = filtered
+		var err error
+		anomalies, err = h.Repository.SearchAnomalies(name, year)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 	} else {
-		anomalies, _ = h.Repository.GetAllAnomalies()
+		// Если нет параметров - получаем все аномалии
+		var err error
+		anomalies, err = h.Repository.GetAllAnomalies()
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	response := make([]gin.H, len(anomalies))
