@@ -49,7 +49,13 @@ type UploadImageResponse struct {
 	Filename string `json:"filename" example:"anomaly_image"`
 }
 
-// TreeCartResponse представляет ответ с данными корзины
+// TreeCartPublicResponse представляет публичный ответ с данными корзины (без авторизации)
+type TreeCartPublicResponse struct {
+	UserID    int64 `json:"user_id" example:"-1"`
+	ItemCount int64 `json:"item_count" example:"0"`
+}
+
+// TreeCartResponse представляет ответ с данными корзины - добаыить user_id
 type TreeCartResponse struct {
 	TreeID    uint  `json:"tree_id" example:"1"`
 	ItemCount int64 `json:"item_count" example:"5"`

@@ -13,6 +13,22 @@ import (
 
 // GetTreeCart godoc
 // @Summary Получение данных корзины
+// @Description Возвращает ID пользователя и количество элементов в корзине
+// @Tags trees
+// @Produce json
+// @Success 200 {object} TreeCartPublicResponse
+// @Router /api/trees/cart [get]
+func (h *Handler) GetTreeCart(ctx *gin.Context) {
+	// Временно возвращаем статические данные вместо проверки авторизации
+	ctx.JSON(http.StatusOK, gin.H{
+		"user_id":    -1,
+		"item_count": 0,
+	})
+}
+
+/*
+// GetTreeCart godoc
+// @Summary Получение данных корзины
 // @Description Возвращает ID черновой заявки и количество элементов в ней
 // @Tags trees
 // @Produce json
@@ -46,6 +62,7 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 		"item_count": count,
 	})
 }
+*/
 
 // GetTrees godoc
 // @Summary Получение списка заявок

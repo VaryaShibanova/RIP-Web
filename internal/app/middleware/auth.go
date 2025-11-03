@@ -12,6 +12,24 @@ import (
 
 func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		// ✅ ДОБАВЬТЕ ЭТУ ПРОВЕРКУ - список публичных маршрутов
+		publicRoutes := []string{
+			"/api/anomalies",
+			"/api/users/register",
+			"/api/users/login",
+			"/api/trees/cart", // ← ДОБАВЬТЕ КОРЗИНУ СЮДА
+		}
+
+		// Проверяем, является ли текущий маршрут публичным
+		for _, route := range publicRoutes {
+			if ctx.Request.URL.Path == route {
+				// Публичный маршрут - пропускаем без аутентификации
+				ctx.Next()
+				return
+			}
+		}
+
+		// Оригинальная логика для защищенных маршрутов
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
 			token, err := ctx.Cookie("token")

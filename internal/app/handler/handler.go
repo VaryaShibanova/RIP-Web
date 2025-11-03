@@ -41,6 +41,7 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 	// Публичные маршруты
 	api.GET("/anomalies", h.GetAnomalies)
 	api.GET("/anomalies/:id", h.GetAnomaly)
+	api.GET("/trees/cart", h.GetTreeCart) // - для 5-7 лабы
 	api.POST("/users/register", h.RegisterUser)
 	api.POST("/users/login", h.LoginUser)
 
@@ -52,7 +53,6 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 		api.PUT("/users/profile", h.RequireAuth(), h.UpdateUserProfile)
 
 		// Заявки (доступны всем авторизованным пользователям)
-		api.GET("/trees/cart", h.RequireAuth(), h.GetTreeCart)
 		api.GET("/trees", h.RequireAuth(), h.GetTrees)
 		api.POST("/trees/current/items", h.RequireAuth(), h.AddToTree)
 		api.GET("/trees/:id", h.RequireAuth(), h.GetTree)
