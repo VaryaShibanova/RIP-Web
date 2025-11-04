@@ -72,7 +72,8 @@ type TreeShortResponse struct {
 	Creator           string `json:"creator" example:"research_user"`
 	Moderator         string `json:"moderator,omitempty" example:"moderator_user"`
 	AmountOfAnomalies int    `json:"amount_of_anomalies" example:"3"`
-	Status            string `json:"status,omitempty" example:"черновик"` // Добавляем для модератора
+	Status            string `json:"status,omitempty" example:"черновик"`
+	FinalYear         int    `json:"final_year,omitempty" example:"2023"` // Добавляем final_year
 }
 
 // TreeResponse представляет информацию о заявке
@@ -104,7 +105,7 @@ type TreeItemResponse struct {
 type UpdateTreeRequest struct {
 	Description string `json:"description" example:"Обновленное описание"`
 	TotalRings  int    `json:"total_rings" example:"120"`
-	FinalYear   int    `json:"final_year" example:"2024"`
+	FinalYear   int    `json:"final_year" example:"2024"` // Добавляем final_year
 }
 
 // CompleteTreeRequest представляет запрос на завершение заявки

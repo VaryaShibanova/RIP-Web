@@ -127,7 +127,8 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 		Creator           string `json:"creator"`
 		Moderator         string `json:"moderator,omitempty"`
 		AmountOfAnomalies int    `json:"amount_of_anomalies"`
-		Status            string `json:"status,omitempty"` // Добавляем статус только для модератора
+		Status            string `json:"status,omitempty"`
+		FinalYear         int    `json:"final_year"` // Добавляем final_year
 	}
 
 	response := make([]TreeResponse, len(trees))
@@ -139,6 +140,7 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 			ID:                tree.ID,
 			Creator:           tree.Creator.Login,
 			AmountOfAnomalies: int(itemCount),
+			FinalYear:         tree.FinalYear, // Добавляем final_year
 		}
 
 		if tree.ModeratorID.Valid {
@@ -210,8 +212,8 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 		ID          uint   `json:"id"`
 		Description string `json:"description"`
 		TotalRings  int    `json:"total_rings"`
-		FinalYear   int    `json:"final_year"`
-		Status      string `json:"status,omitempty"` // Добавляем статус только для модератора
+		FinalYear   int    `json:"final_year"` // Убедимся что есть
+		Status      string `json:"status,omitempty"`
 		CreatorID   uint   `json:"creator_id"`
 	}
 
@@ -227,7 +229,7 @@ func (h *Handler) GetTree(ctx *gin.Context) {
 		ID:          tree.ID,
 		Description: tree.Description,
 		TotalRings:  tree.TotalRings,
-		FinalYear:   tree.FinalYear,
+		FinalYear:   tree.FinalYear, // Добавляем final_year
 		CreatorID:   tree.CreatorID,
 	}
 
@@ -304,7 +306,7 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 	var updateData struct {
 		Description string `json:"description"`
 		TotalRings  int    `json:"total_rings"`
-		FinalYear   int    `json:"final_year"`
+		FinalYear   int    `json:"final_year"` // Добавляем final_year
 	}
 
 	if err := ctx.ShouldBindJSON(&updateData); err != nil {
@@ -314,7 +316,7 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 
 	tree.Description = updateData.Description
 	tree.TotalRings = updateData.TotalRings
-	tree.FinalYear = updateData.FinalYear
+	tree.FinalYear = updateData.FinalYear // Обновляем final_year
 
 	if err := h.Repository.UpdateTree(tree); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -325,14 +327,14 @@ func (h *Handler) UpdateTree(ctx *gin.Context) {
 		ID          uint   `json:"id"`
 		Description string `json:"description"`
 		TotalRings  int    `json:"total_rings"`
-		FinalYear   int    `json:"final_year"`
+		FinalYear   int    `json:"final_year"` // Добавляем final_year
 	}
 
 	simplifiedResponse := SimplifiedTreeResponse{
 		ID:          tree.ID,
 		Description: tree.Description,
 		TotalRings:  tree.TotalRings,
-		FinalYear:   tree.FinalYear,
+		FinalYear:   tree.FinalYear, // Добавляем final_year
 	}
 
 	ctx.JSON(http.StatusOK, simplifiedResponse)
