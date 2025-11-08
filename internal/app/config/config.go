@@ -35,7 +35,7 @@ func NewConfig() (*Config, error) {
 	viper.WatchConfig()
 
 	// Устанавливаем значения по умолчанию
-	viper.SetDefault("ServiceHost", "localhost")
+	viper.SetDefault("ServiceHost", "0.0.0.0")
 	viper.SetDefault("ServicePort", 8080)
 	viper.SetDefault("JWTSecret", "fallback-secret-key")
 	viper.SetDefault("JWTExpiration", 24)
@@ -49,12 +49,14 @@ func NewConfig() (*Config, error) {
 		log.Warnf("No config file found, using defaults: %v", err)
 	}
 
+	log.Infof("Loaded config from: %s", viper.ConfigFileUsed())
+
 	cfg := &Config{}
 	err = viper.Unmarshal(cfg)
 	if err != nil {
 		return nil, err
 	}
-
+	log.Infof("Config values: ServiceHost=%s, ServicePort=%d, RedisHost=%s", cfg.ServiceHost, cfg.ServicePort, cfg.RedisHost)
 	log.Info("config parsed")
 
 	return cfg, nil
