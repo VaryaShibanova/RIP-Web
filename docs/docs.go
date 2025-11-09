@@ -386,12 +386,7 @@ const docTemplate = `{
         },
         "/api/trees/cart": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает ID черновой заявки и количество элементов в ней",
+                "description": "Возвращает данные корзины для авторизованных пользователей или статические данные для гостей",
                 "produces": [
                     "application/json"
                 ],
@@ -404,12 +399,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handler.TreeCartResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     }
                 }
@@ -1394,11 +1383,15 @@ const docTemplate = `{
             "properties": {
                 "item_count": {
                     "type": "integer",
-                    "example": 5
+                    "example": 0
                 },
                 "tree_id": {
                     "type": "integer",
-                    "example": 1
+                    "example": 0
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": -1
                 }
             }
         },

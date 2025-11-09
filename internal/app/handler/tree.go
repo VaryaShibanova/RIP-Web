@@ -28,20 +28,25 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 
 // GetTreeCart godoc
 // @Summary Получение данных корзины
-// @Description Возвращает ID черновой заявки и количество элементов в ней
+// @Description Возвращает данные корзины для авторизованных пользователей или статические данные для гостей
 // @Tags trees
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {object} TreeCartResponse
-// @Failure 401 {object} ErrorResponse
 // @Router /api/trees/cart [get]
 func (h *Handler) GetTreeCart(ctx *gin.Context) {
 	userID, exists := ctx.Get("user_id")
+
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Требуется аутентификация"})
+		// Неавторизованный пользователь - статические данные
+		ctx.JSON(http.StatusOK, gin.H{
+			"user_id":    -1,
+			"item_count": 0,
+			"tree_id":    0,
+		})
 		return
 	}
 
+	// Авторизованный пользователь - реальные данные
 	tree, err := h.Repository.GetDraftTree(userID.(uint))
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -59,6 +64,7 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"tree_id":    treeID,
 		"item_count": count,
+		"user_id":    userID,
 	})
 }
 

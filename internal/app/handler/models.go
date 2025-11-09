@@ -55,10 +55,11 @@ type TreeCartPublicResponse struct {
 	ItemCount int64 `json:"item_count" example:"0"`
 }
 
-// TreeCartResponse представляет ответ с данными корзины - добаыить user_id
+// TreeCartResponse представляет ответ с данными корзины
 type TreeCartResponse struct {
-	TreeID    uint  `json:"tree_id" example:"1"`
-	ItemCount int64 `json:"item_count" example:"5"`
+	UserID    int64 `json:"user_id" example:"-1"`
+	TreeID    uint  `json:"tree_id" example:"0"`
+	ItemCount int64 `json:"item_count" example:"0"`
 }
 
 // TreesListResponse представляет ответ со списком заявок

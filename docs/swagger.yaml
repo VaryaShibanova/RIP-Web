@@ -168,10 +168,13 @@ definitions:
   handler.TreeCartResponse:
     properties:
       item_count:
-        example: 5
+        example: 0
         type: integer
       tree_id:
-        example: 1
+        example: 0
+        type: integer
+      user_id:
+        example: -1
         type: integer
     type: object
   handler.TreeDetailResponse:
@@ -872,7 +875,8 @@ paths:
       - tree-items
   /api/trees/cart:
     get:
-      description: Возвращает ID черновой заявки и количество элементов в ней
+      description: Возвращает данные корзины для авторизованных пользователей или
+        статические данные для гостей
       produces:
       - application/json
       responses:
@@ -880,12 +884,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/handler.TreeCartResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Получение данных корзины
       tags:
       - trees

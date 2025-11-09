@@ -17,7 +17,7 @@ func AuthMiddleware(cfg *config.Config, tokenManager *utils.TokenManager) gin.Ha
 			"/api/anomalies",
 			"/api/users/register",
 			"/api/users/login",
-			"/api/trees/cart", // ← ДОБАВЬТЕ КОРЗИНУ СЮДА
+			//"/api/trees/cart", // ← ДОБАВЬТЕ КОРЗИНУ СЮДА
 		}
 
 		// Проверяем, является ли текущий маршрут публичным

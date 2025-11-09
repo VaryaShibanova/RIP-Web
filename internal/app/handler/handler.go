@@ -54,8 +54,8 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 
 		// Заявки (доступны всем авторизованным пользователям)
 		api.GET("/trees", h.RequireAuth(), h.GetTrees)
+		api.GET("/trees/cart", h.RequireAuth(), h.GetTreeCart)
 		api.POST("/trees/current/items", h.RequireAuth(), h.AddToTree)
-		api.GET("/trees/cart", h.GetTreeCart)
 		api.GET("/trees/:id", h.RequireAuth(), h.GetTree)
 		api.PUT("/trees/:id", h.RequireAuth(), h.UpdateTree)
 		api.PUT("/trees/:id/form", h.RequireAuth(), h.FormTree)
