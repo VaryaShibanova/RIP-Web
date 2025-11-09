@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetTreeCart godoc
+/*// GetTreeCart godoc
 // @Summary Получение данных корзины
 // @Description Возвращает ID пользователя и количество элементов в корзине
 // @Tags trees
@@ -24,9 +24,8 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 		"user_id":    -1,
 		"item_count": 0,
 	})
-}
+}*/
 
-/*
 // GetTreeCart godoc
 // @Summary Получение данных корзины
 // @Description Возвращает ID черновой заявки и количество элементов в ней
@@ -62,7 +61,6 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 		"item_count": count,
 	})
 }
-*/
 
 // GetTrees godoc
 // @Summary Получение списка заявок

@@ -231,6 +231,10 @@ definitions:
       creator:
         example: research_user
         type: string
+      final_year:
+        description: Добавляем final_year
+        example: 2023
+        type: integer
       id:
         example: 1
         type: integer
@@ -238,7 +242,6 @@ definitions:
         example: moderator_user
         type: string
       status:
-        description: Добавляем для модератора
         example: черновик
         type: string
     type: object
@@ -293,6 +296,7 @@ definitions:
         example: Обновленное описание
         type: string
       final_year:
+        description: Добавляем final_year
         example: 2024
         type: integer
       total_rings:

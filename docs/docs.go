@@ -1482,6 +1482,11 @@ const docTemplate = `{
                     "type": "string",
                     "example": "research_user"
                 },
+                "final_year": {
+                    "description": "Добавляем final_year",
+                    "type": "integer",
+                    "example": 2023
+                },
                 "id": {
                     "type": "integer",
                     "example": 1
@@ -1491,7 +1496,6 @@ const docTemplate = `{
                     "example": "moderator_user"
                 },
                 "status": {
-                    "description": "Добавляем для модератора",
                     "type": "string",
                     "example": "черновик"
                 }
@@ -1571,6 +1575,7 @@ const docTemplate = `{
                     "example": "Обновленное описание"
                 },
                 "final_year": {
+                    "description": "Добавляем final_year",
                     "type": "integer",
                     "example": 2024
                 },
