@@ -298,3 +298,79 @@ func (r *Repository) GetUserTreesWithFilters(userID uint, status string, dateFro
 
 	return trees, nil
 }
+
+/*// UpdateTreeItemCalculatedYear обновляет calculated_year
+func (r *Repository) UpdateTreeItemCalculatedYear(treeItemID uint, calculatedYear int) error {
+	return r.db.Model(&ds.TreeItem{}).
+		Where("id = ?", treeItemID).
+		Update("calculated_year", calculatedYear).
+		Error
+}*/
+
+/* / CalculateAndUpdateFinalYear рассчитывает final_year как среднее всех calculated_year
+func (r *Repository) CalculateAndUpdateFinalYear(treeID uint) error {
+	var treeItems []ds.TreeItem
+	if err := r.db.Where("tree_id = ? AND calculated_year > 0", treeID).Find(&treeItems).Error; err != nil {
+		return err
+	}
+
+	if len(treeItems) == 0 {
+		return r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Updates(map[string]interface{}{
+			"final_year": 0,
+			"status":     "завершён",
+		}).Error
+	}
+
+	// Расчет final_year
+	total := 0
+	for _, item := range treeItems {
+		total += item.CalculatedYear
+	}
+	finalYear := total / len(treeItems)
+
+	return r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Updates(map[string]interface{}{
+		"final_year": finalYear,
+		"status":     "завершён",
+	}).Error
+}*/
+
+// UpdateTreeStatus обновляет только статус заявки
+func (r *Repository) UpdateTreeStatus(treeID uint, status string) error {
+	return r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Update("status", status).Error
+}
+
+// UpdateTreeItemCalculatedYear обновляет calculated_year для TreeItem
+func (r *Repository) UpdateTreeItemCalculatedYear(treeItemID uint, calculatedYear int) error {
+	return r.db.Model(&ds.TreeItem{}).
+		Where("id = ?", treeItemID).
+		Update("calculated_year", calculatedYear).
+		Error
+}
+
+// CalculateAndUpdateFinalYear рассчитывает final_year как среднее всех calculated_year
+func (r *Repository) CalculateAndUpdateFinalYear(treeID uint) error {
+	var treeItems []ds.TreeItem
+	if err := r.db.Where("tree_id = ? AND calculated_year > 0", treeID).Find(&treeItems).Error; err != nil {
+		return err
+	}
+
+	if len(treeItems) == 0 {
+		return r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Updates(map[string]interface{}{
+			"final_year": 0,
+			"status":     "завершён",
+		}).Error
+	}
+
+	// Расчет final_year
+	total := 0
+	for _, item := range treeItems {
+		total += item.CalculatedYear
+	}
+	finalYear := total / len(treeItems)
+
+	return r.db.Model(&ds.Tree{}).Where("id = ?", treeID).Updates(map[string]interface{}{
+		"final_year":  finalYear,
+		"status":      "завершён",
+		"date_finish": time.Now(),
+	}).Error
+}

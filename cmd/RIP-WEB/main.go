@@ -71,7 +71,7 @@ func main() {
 	hand := handler.NewHandler(rep, conf, tokenManager)
 
 	// Добавьте эту строку ПЕРВОЙ в middleware
-	router.Use(middleware.CORSMiddleware())
+	router.Use(middleware.CorsMiddleware())
 
 	// Регистрация middleware
 	router.Use(middleware.AuthMiddleware(conf, tokenManager))
