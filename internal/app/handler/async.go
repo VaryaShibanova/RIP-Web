@@ -23,19 +23,13 @@ type TreeItemForCalc struct {
 	AnomalyYear    int    `json:"anomaly_year" binding:"required"`
 }
 
-// AsyncResultResponse ответ для одного TreeItem
+// AsyncResultResponse теперь принимает ВСЕ результаты
 type AsyncResultResponse struct {
-	TreeID         uint   `json:"tree_id" binding:"required"`
-	TreeItemID     uint   `json:"tree_item_id" binding:"required"`
-	CalculatedYear int    `json:"calculated_year" binding:"required"`
-	Status         string `json:"status" binding:"required"`
-}
-
-// FinalResultResponse финальный ответ когда все расчеты завершены
-type FinalResultResponse struct {
-	TreeID  uint             `json:"tree_id" binding:"required"`
-	Message string           `json:"message" binding:"required"`
-	Results []TreeItemResult `json:"results" binding:"required"`
+	TreeID      uint             `json:"tree_id" binding:"required"`
+	Message     string           `json:"message" binding:"required"`
+	Results     []TreeItemResult `json:"results" binding:"required"`
+	TotalItems  int              `json:"total_items" binding:"required"`
+	FinalStatus string           `json:"final_status" binding:"required"`
 }
 
 type TreeItemResult struct {
@@ -44,7 +38,7 @@ type TreeItemResult struct {
 	Status         string `json:"status" binding:"required"`
 }
 
-// ReceiveAsyncResult обработка результата для одного TreeItem
+// ReceiveAsyncResult обработка ВСЕХ результатов одним запросом
 func (h *Handler) ReceiveAsyncResult(ctx *gin.Context) {
 	// ПСЕВДО АВТОРИЗАЦИЯ - простая проверка токена
 	authHeader := ctx.GetHeader("Authorization")
@@ -60,55 +54,58 @@ func (h *Handler) ReceiveAsyncResult(ctx *gin.Context) {
 
 	var request AsyncResultResponse
 	if err := ctx.ShouldBindJSON(&request); err != nil {
+		fmt.Printf("❌ JSON bind error: %v\n", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Обновляем calculated_year для TreeItem
-	err := h.Repository.UpdateTreeItemCalculatedYear(request.TreeItemID, request.CalculatedYear)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	fmt.Printf("📦 Received ALL results for tree %d: %d items\n",
+		request.TreeID, len(request.Results))
+
+	// 👇 ОБНОВЛЯЕМ ВСЕ TreeItems ОДНИМ МАССИВОМ
+	successCount := 0
+	failedCount := 0
+
+	for _, result := range request.Results {
+		if result.Status == "completed" {
+			err := h.Repository.UpdateTreeItemCalculatedYear(
+				result.TreeItemID,
+				result.CalculatedYear,
+			)
+			if err != nil {
+				fmt.Printf("❌ Failed to update tree_item %d: %v\n", result.TreeItemID, err)
+				failedCount++
+			} else {
+				successCount++
+				fmt.Printf("✅ Updated tree_item %d with calculated_year %d\n",
+					result.TreeItemID, result.CalculatedYear)
+			}
+		} else {
+			fmt.Printf("⚠️  Skipping tree_item %d with status: %s\n",
+				result.TreeItemID, result.Status)
+			failedCount++
+		}
 	}
 
-	fmt.Printf("✅ Updated tree_item %d with calculated_year %d\n", request.TreeItemID, request.CalculatedYear)
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"message":      "TreeItem result processed",
-		"tree_item_id": request.TreeItemID,
-	})
-}
-
-// ReceiveFinalResult обработка финального результата когда все расчеты завершены
-func (h *Handler) ReceiveFinalResult(ctx *gin.Context) {
-	// ПСЕВДО АВТОРИЗАЦИЯ
-	authHeader := ctx.GetHeader("Authorization")
-	expectedToken := "Bearer abc12345"
-
-	if authHeader != expectedToken {
-		fmt.Printf("❌ Invalid token in final callback. Expected: %s, Got: %s\n", expectedToken, authHeader)
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token"})
-		return
-	}
-
-	var request FinalResultResponse
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Рассчитываем и обновляем final_year
+	// 👇 РАССЧИТЫВАЕМ final_year ДЛЯ ВСЕЙ ЗАЯВКИ
+	fmt.Printf("🔢 Calculating final year for tree %d\n", request.TreeID)
 	err := h.Repository.CalculateAndUpdateFinalYear(request.TreeID)
 	if err != nil {
+		fmt.Printf("❌ Failed to calculate final year: %v\n", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	fmt.Printf("✅ Final year calculated for tree %d\n", request.TreeID)
+	fmt.Printf("🎯 All updates completed for tree %d: %d successful, %d failed\n",
+		request.TreeID, successCount, failedCount)
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Final year calculated and tree completed",
-		"tree_id": request.TreeID,
+		"message":            "All tree items processed and final year calculated",
+		"tree_id":            request.TreeID,
+		"successful_updates": successCount,
+		"failed_updates":     failedCount,
+		"total_items":        len(request.Results),
+		"final_year_updated": true,
 	})
 }
 
@@ -116,7 +113,7 @@ func (h *Handler) ReceiveFinalResult(ctx *gin.Context) {
 func (h *Handler) StartAsyncCalculations(treeID uint) {
 	tree, treeItems, err := h.Repository.GetTreeWithItems(treeID)
 	if err != nil {
-		fmt.Printf("Error getting tree items: %v\n", err)
+		fmt.Printf("❌ Error getting tree items: %v\n", err)
 		return
 	}
 
@@ -138,12 +135,16 @@ func (h *Handler) StartAsyncCalculations(treeID uint) {
 	}
 
 	// ЛОГИРОВАНИЕ
-	fmt.Printf("Sending to Django: tree_id=%d, items_count=%d\n", treeID, len(calcItems))
+	fmt.Printf("🚀 Sending to Django: tree_id=%d, items_count=%d\n", treeID, len(calcItems))
+	for i, item := range calcItems {
+		fmt.Printf("   Item %d: tree_item_id=%d, anomaly_id=%d\n",
+			i+1, item.TreeItemID, item.AnomalyID)
+	}
 
 	// Отправляем в Django сервис
 	jsonData, err := json.Marshal(requestData)
 	if err != nil {
-		fmt.Printf("Error marshaling request: %v\n", err)
+		fmt.Printf("❌ Error marshaling request: %v\n", err)
 		return
 	}
 
@@ -153,10 +154,26 @@ func (h *Handler) StartAsyncCalculations(treeID uint) {
 		bytes.NewBuffer(jsonData),
 	)
 	if err != nil {
-		fmt.Printf("Error calling async service: %v\n", err)
+		fmt.Printf("❌ Error calling async service: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("Async calculations started for tree %d, status: %d\n", treeID, resp.StatusCode)
+	// Читаем ответ от Django
+	var response struct {
+		Message    string `json:"message"`
+		TreeID     uint   `json:"tree_id"`
+		TotalItems int    `json:"total_items"`
+		Status     string `json:"status"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		fmt.Printf("❌ Error parsing Django response: %v\n", err)
+		return
+	}
+
+	fmt.Printf("✅ Async calculations started for tree %d, status: %s\n",
+		treeID, response.Status)
+	fmt.Printf("   Message: %s, Total items: %d\n",
+		response.Message, response.TotalItems)
 }

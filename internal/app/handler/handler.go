@@ -61,7 +61,7 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 		api.PUT("/trees/:id/form", h.RequireAuth(), h.FormTree)
 		api.DELETE("/trees/:id", h.RequireAuth(), h.DeleteTree)
 		api.POST("/async/result", h.ReceiveAsyncResult)
-		api.POST("/async/final-result", h.ReceiveFinalResult)
+		//api.POST("/async/final-result", h.ReceiveFinalResult)
 
 		// Tree items
 		items := api.Group("/trees/:id/items")

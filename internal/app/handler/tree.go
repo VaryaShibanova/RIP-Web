@@ -81,6 +81,7 @@ func (h *Handler) GetTreeCart(ctx *gin.Context) {
 // @Failure 400 {object} ErrorResponse
 // @Failure 401 {object} ErrorResponse
 // @Router /api/trees [get]
+// handler/tree.go
 func (h *Handler) GetTrees(ctx *gin.Context) {
 	userID, exists := ctx.Get("user_id")
 	if !exists {
@@ -114,10 +115,8 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 
 	var trees []ds.Tree
 	if isModerator.(bool) {
-		// Модератор видит ВСЕ заявки без исключений
 		trees, err = h.Repository.GetAllTreesForModerator(status, dateFrom, dateTo)
 	} else {
-		// Пользователь видит только СВОИ заявки кроме удаленных
 		trees, err = h.Repository.GetUserTreesWithFilters(userID.(uint), status, dateFrom, dateTo)
 	}
 
@@ -126,26 +125,43 @@ func (h *Handler) GetTrees(ctx *gin.Context) {
 		return
 	}
 
+	type CalculatedYearItem struct {
+		AnomalyID      uint `json:"anomaly_id"`
+		CalculatedYear int  `json:"calculated_year"`
+	}
+
 	type TreeResponse struct {
-		ID                uint   `json:"id"`
-		Creator           string `json:"creator"`
-		Moderator         string `json:"moderator,omitempty"`
-		AmountOfAnomalies int    `json:"amount_of_anomalies"`
-		Status            string `json:"status,omitempty"`
-		FinalYear         int    `json:"final_year"` // Добавляем final_year
+		ID                uint                 `json:"id"`
+		Creator           string               `json:"creator"`
+		Moderator         string               `json:"moderator,omitempty"`
+		AmountOfAnomalies int                  `json:"amount_of_anomalies"`
+		Status            string               `json:"status,omitempty"`
+		FinalYear         int                  `json:"final_year"`
+		CalculatedYears   []CalculatedYearItem `json:"calculated_years"` // Добавляем список calculated_year
 	}
 
 	response := make([]TreeResponse, len(trees))
 	for i, tree := range trees {
-		var itemCount int64
-		h.Repository.GetDB().Model(&ds.TreeItem{}).Where("tree_id = ?", tree.ID).Count(&itemCount)
+		// Получаем элементы заявки
+		var treeItems []ds.TreeItem
+		h.Repository.GetDB().Where("tree_id = ?", tree.ID).Find(&treeItems)
+
+		// Формируем список calculated_year для каждой аномалии
+		calculatedYears := make([]CalculatedYearItem, len(treeItems))
+		for j, item := range treeItems {
+			calculatedYears[j] = CalculatedYearItem{
+				AnomalyID:      item.AnomalyID,
+				CalculatedYear: item.CalculatedYear,
+			}
+		}
 
 		response[i] = TreeResponse{
 			ID:                tree.ID,
 			Creator:           tree.Creator.Login,
-			AmountOfAnomalies: int(itemCount),
-			FinalYear:         tree.FinalYear, // Добавляем final_year
-			Status:            tree.Status,    // ВСЕГДА возвращаем статус для всех пользователей
+			AmountOfAnomalies: len(treeItems),
+			FinalYear:         tree.FinalYear,
+			Status:            tree.Status,
+			CalculatedYears:   calculatedYears, // Добавляем список calculated_year
 		}
 
 		if tree.ModeratorID.Valid {

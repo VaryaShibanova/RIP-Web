@@ -74,7 +74,8 @@ type TreeShortResponse struct {
 	Moderator         string `json:"moderator,omitempty" example:"moderator_user"`
 	AmountOfAnomalies int    `json:"amount_of_anomalies" example:"3"`
 	Status            string `json:"status,omitempty" example:"черновик"`
-	FinalYear         int    `json:"final_year,omitempty" example:"2023"` // Добавляем final_year
+	FinalYear         int    `json:"final_year,omitempty" example:"2023"`      // Добавляем final_year
+	CalculatedYear    int    `json:"calculated_year,omitempty" example:"2022"` // Добавляем calculated_year
 }
 
 // TreeResponse представляет информацию о заявке
