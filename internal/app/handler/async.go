@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,17 +41,31 @@ type TreeItemResult struct {
 
 // ReceiveAsyncResult обработка ВСЕХ результатов одним запросом
 func (h *Handler) ReceiveAsyncResult(ctx *gin.Context) {
-	// ПСЕВДО АВТОРИЗАЦИЯ - простая проверка токена
+	// ПСЕВДО АВТОРИЗАЦИЯ - проверка токена
 	authHeader := ctx.GetHeader("Authorization")
-	expectedToken := "Bearer abc12345" // Простой токен на 8+ байт
 
-	if authHeader != expectedToken {
-		fmt.Printf("❌ Invalid token. Expected: %s, Got: %s\n", expectedToken, authHeader)
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token"})
+	// Проверяем фортокен и длину
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		fmt.Printf("❌ Invalid token format. Missing 'Bearer ' prefix\n")
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization token format"})
 		return
 	}
 
+	// Извлекаем токен без префикса "Bearer "
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Проверяем длину токена (должен быть 8+ символов)
+	if len(token) < 8 {
+		fmt.Printf("❌ Token too short. Required: 8+ chars, Got: %d chars\n", len(token))
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Token is too short (minimum 8 characters)"})
+		return
+	}
+
+	// В реальном проекте здесь должна быть проверка токена из конфига
+	// Например: if token != h.Config.AsyncCallbackToken { ... }
+
 	fmt.Printf("✅ Token validation successful\n")
+	fmt.Printf("📦 Received token: %s (length: %d)\n", token, len(token))
 
 	var request AsyncResultResponse
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -148,8 +163,9 @@ func (h *Handler) StartAsyncCalculations(treeID uint) {
 		return
 	}
 
+	// ОБНОВЛЕННЫЙ URL С НОВЫМ ИМЕНЕМ
 	resp, err := http.Post(
-		"http://localhost:8000/api/async/calculate",
+		"http://localhost:8000/api/asynctree/yeartree/calculate",
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
