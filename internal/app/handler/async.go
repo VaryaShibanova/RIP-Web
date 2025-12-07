@@ -39,8 +39,27 @@ type TreeItemResult struct {
 	Status         string `json:"status" binding:"required"`
 }
 
-// ReceiveAsyncResult обработка ВСЕХ результатов одним запросом
+// ReceiveAsyncResult godoc
+// @Summary Обновление результатов асинхронных расчетов
+// @Description Принимает результаты расчетов calculated_year для TreeItem (PUT метод)
+// @Tags async
+// @Accept json
+// @Produce json
+// @Param data body AsyncResultResponse true "Результаты расчетов"
+// @Success 200 {object} UpdateResultsResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /api/asynctree/ageresult [put]
 func (h *Handler) ReceiveAsyncResult(ctx *gin.Context) {
+	// Проверяем что это PUT запрос
+	if ctx.Request.Method != http.MethodPut {
+		fmt.Printf("❌ Method not allowed. Expected PUT, got: %s\n", ctx.Request.Method)
+		ctx.JSON(http.StatusMethodNotAllowed, gin.H{
+			"error": "Method not allowed. Use PUT for updating results",
+		})
+		return
+	}
+
 	// ПСЕВДО АВТОРИЗАЦИЯ - проверка токена
 	authHeader := ctx.GetHeader("Authorization")
 
@@ -61,11 +80,8 @@ func (h *Handler) ReceiveAsyncResult(ctx *gin.Context) {
 		return
 	}
 
-	// В реальном проекте здесь должна быть проверка токена из конфига
-	// Например: if token != h.Config.AsyncCallbackToken { ... }
-
-	fmt.Printf("✅ Token validation successful\n")
-	fmt.Printf("📦 Received token: %s (length: %d)\n", token, len(token))
+	fmt.Printf("✅ PUT request received from Django\n")
+	fmt.Printf("📦 Token: %s (length: %d)\n", token, len(token))
 
 	var request AsyncResultResponse
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -150,20 +166,20 @@ func (h *Handler) StartAsyncCalculations(treeID uint) {
 	}
 
 	// ЛОГИРОВАНИЕ
-	fmt.Printf("🚀 Sending to Django: tree_id=%d, items_count=%d\n", treeID, len(calcItems))
+	fmt.Printf("🚀 Sending POST to Django: tree_id=%d, items_count=%d\n", treeID, len(calcItems))
 	for i, item := range calcItems {
 		fmt.Printf("   Item %d: tree_item_id=%d, anomaly_id=%d\n",
 			i+1, item.TreeItemID, item.AnomalyID)
 	}
 
-	// Отправляем в Django сервис
+	// Отправляем в Django сервис - ЭТО POST (создание задачи расчета)
 	jsonData, err := json.Marshal(requestData)
 	if err != nil {
 		fmt.Printf("❌ Error marshaling request: %v\n", err)
 		return
 	}
 
-	// ОБНОВЛЕННЫЙ URL С НОВЫМ ИМЕНЕМ
+	// POST запрос - создание задачи расчета в Django
 	resp, err := http.Post(
 		"http://localhost:8000/api/asynctree/yeartree/calculate",
 		"application/json",

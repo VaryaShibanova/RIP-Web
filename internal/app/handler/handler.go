@@ -60,7 +60,7 @@ func (h *Handler) RegisterAPIHandlers(router *gin.Engine) {
 		api.PUT("/trees/:id", h.RequireAuth(), h.UpdateTree)
 		api.PUT("/trees/:id/form", h.RequireAuth(), h.FormTree)
 		api.DELETE("/trees/:id", h.RequireAuth(), h.DeleteTree)
-		api.POST("/asynctree/ageresult", h.ReceiveAsyncResult)
+		api.PUT("/asynctree/ageresult", h.ReceiveAsyncResult)
 		//api.POST("/async/final-result", h.ReceiveFinalResult)
 
 		// Tree items
